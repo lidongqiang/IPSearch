@@ -1,0 +1,315 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#ifndef APSTUDIO_INVOKED
+#include "targetver.h"
+#endif
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// Chinese (P.R.C.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_CHS)
+#ifdef _WIN32
+LANGUAGE LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED
+#pragma code_page(936)
+#endif //_WIN32
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#ifndef APSTUDIO_INVOKED\r\n"
+    "#include ""targetver.h""\r\n"
+    "#endif\r\n"
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "#define _AFX_NO_SPLITTER_RESOURCES\r\n"
+    "#define _AFX_NO_OLE_RESOURCES\r\n"
+    "#define _AFX_NO_TRACKER_RESOURCES\r\n"
+    "#define _AFX_NO_PROPERTY_RESOURCES\r\n"
+    "\r\n"
+    "#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_CHS)\r\n"
+    "LANGUAGE 4, 2\r\n"
+    "#pragma code_page(936)\r\n"
+    "#include ""res\\IPSearch.rc2""  // 非 Microsoft Visual C++ 编辑的资源\r\n"
+    "#include ""l.CHS\\afxres.rc""      // 标准组件\r\n"
+    "#endif\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDR_MAINFRAME           ICON                    "res\\IPSearch.ico"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_ABOUTBOX DIALOGEX 0, 0, 170, 62
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "关于 IPSearch"
+FONT 9, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    ICON            IDR_MAINFRAME,IDC_STATIC,14,14,21,20
+    LTEXT           "IPSearch，1.0 版",IDC_STATIC,42,14,114,8,SS_NOPREFIX
+    LTEXT           "Copyright (C) 2017",IDC_STATIC,42,26,114,8
+    DEFPUSHBUTTON   "确定",IDOK,113,41,50,14,WS_GROUP
+END
+
+IDD_IPSEARCH_DIALOG DIALOGEX 0, 0, 327, 314
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+EXSTYLE WS_EX_APPWINDOW
+CAPTION "IPSearch"
+FONT 9, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "搜索",ID_BTN_SERCH,218,88,40,14
+    CONTROL         "",IDC_LIST_DEVICE,"SysListView32",LVS_REPORT | LVS_ALIGNLEFT | WS_BORDER | WS_TABSTOP,17,17,192,143
+    LTEXT           "IP",IDC_STATIC,221,18,8,8
+    LTEXT           "UID",IDC_STATIC,221,38,12,8
+    LTEXT           "设备名称",IDC_STATIC,221,57,28,8
+    LTEXT           "监听端口",IDC_STATIC,217,73,28,8
+    EDITTEXT        IDC_EDIT_IP,238,16,59,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_UID,240,35,57,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_DEVNAME,251,53,46,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_PORT,251,71,52,14,ES_AUTOHSCROLL
+    DEFPUSHBUTTON   "设置",ID_BTN_APPLY,262,88,43,14
+    PUSHBUTTON      "开始测试",IDC_BUTTON_TEST,213,125,49,18
+    LISTBOX         IDC_LIST_INFO,17,166,296,134,LBS_OWNERDRAWFIXED | LBS_HASSTRINGS | LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
+    PUSHBUTTON      "码流调试",IDC_BTN_PLAYER,237,106,53,16
+    PUSHBUTTON      "下一台",IDC_BUTTON_NEXT,265,125,48,18
+    PUSHBUTTON      "通过",IDC_BUTTON_PASS,214,146,46,17
+    PUSHBUTTON      "不通过",IDC_BUTTON_FAIL,266,146,46,17
+END
+
+IDD_SETTING_DIALOG DIALOGEX 0, 0, 316, 183
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Dialog"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "确认",ID_BTN_OK,73,162,50,14
+    PUSHBUTTON      "取消",ID_BTN_CANCEL,187,162,50,14
+    GROUPBOX        "测试项目",IDC_STATIC,20,18,132,130
+    CONTROL         "SD卡",IDC_CHECK_SDCARD,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,31,34,33,10
+    CONTROL         "WIFI",IDC_CHECK_WIFI,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,31,54,32,10
+    CONTROL         "按键",IDC_CHECK_KEY,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,31,74,32,10
+    CONTROL         "录音",IDC_CHECK_MONITOR,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,31,95,32,10
+    CONTROL         "放音",IDC_CHECK_PHONE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,31,115,32,10
+    CONTROL         "IRCUT",IDC_CHECK_IRCUT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,90,34,37,10
+    CONTROL         "红外灯",IDC_CHECK_LED,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,89,94,40,10
+    CONTROL         "云台",IDC_CHECK_PTZ,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,89,55,32,10
+    CONTROL         "HDMI",IDC_CHECK_HDMI,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,90,74,33,10
+    GROUPBOX        "写入项目",IDC_STATIC,163,18,133,130
+    CONTROL         "LANMAC",IDC_CHECK_LANMAC,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,183,38,43,10
+    CONTROL         "UID",IDC_CHECK_UID,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,183,62,28,10
+END
+
+IDD_BITCONFIG_DIALOG DIALOGEX 0, 0, 351, 226
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Dialog"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,205,205,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,294,205,50,14
+    GROUPBOX        "码流参数",IDC_STATIC,25,19,301,180
+    LTEXT           "fmt",IDC_STATIC,41,39,12,8
+    LTEXT           "frame_rate",IDC_STATIC,41,58,37,8
+    LTEXT           "level",IDC_STATIC,41,78,16,8
+    LTEXT           "gop_size",IDC_STATIC,41,97,29,8
+    LTEXT           "profile",IDC_STATIC,41,118,21,8
+    LTEXT           "quality",IDC_STATIC,41,136,22,8
+    LTEXT           "qp_init",IDC_STATIC,41,158,22,8
+    LTEXT           "qp_min",IDC_STATIC,190,39,24,8
+    LTEXT           "qp_max",IDC_STATIC,190,58,26,8
+    LTEXT           "rc_mode",IDC_STATIC,190,78,28,8
+    LTEXT           "width",IDC_STATIC,190,97,18,8
+    LTEXT           "height",IDC_STATIC,190,118,21,8
+    LTEXT           "bit_rate",IDC_STATIC,190,136,26,8
+    LTEXT           "channel",IDC_STATIC,190,158,26,8
+    EDITTEXT        IDC_EDIT1,81,37,99,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT2,81,56,98,14,ES_AUTOHSCROLL
+    LTEXT           "qp_step",IDC_STATIC,42,178,27,8
+    EDITTEXT        IDC_EDIT3,222,37,97,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT4,222,56,98,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT5,81,76,98,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT6,81,116,97,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT7,81,95,97,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT8,222,95,97,14,ES_AUTOHSCROLL
+    COMBOBOX        IDC_COMBO1,222,76,98,30,CBS_DROPDOWN | CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_COMBO2,222,156,87,30,CBS_DROPDOWN | CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    EDITTEXT        IDC_EDIT10,81,176,96,14,ES_AUTOHSCROLL
+    COMBOBOX        IDC_COMBO3,81,136,98,30,CBS_DROPDOWN | CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    EDITTEXT        IDC_EDIT11,222,116,97,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT12,222,136,96,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT13,82,155,96,14,ES_AUTOHSCROLL
+END
+
+IDD_VIDEO_DIALOG DIALOGEX 0, 0, 438, 219
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Dialog"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "播放",ID_BTN_PLAY,315,15,50,14
+    PUSHBUTTON      "配置",ID_BTN_CONFIG,370,15,50,14
+    LTEXT           "网络URL",IDC_STATIC_URL,13,16,30,8
+    EDITTEXT        IDC_EDIT_URL,47,14,262,14,ES_AUTOHSCROLL
+    CONTROL         "",IDC_STATIC_VIDEO,"Static",SS_BLACKFRAME,16,35,404,168
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 1,0,0,1
+ PRODUCTVERSION 1,0,0,1
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x4L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "080403a8"
+        BEGIN
+            VALUE "CompanyName", "TODO: <公司名>"
+            VALUE "FileDescription", "TODO: <文件说明>"
+            VALUE "FileVersion", "1.0.0.1"
+            VALUE "InternalName", "IPSearch.exe"
+            VALUE "LegalCopyright", "TODO: (C) <公司名>。保留所有权利。"
+            VALUE "OriginalFilename", "IPSearch.exe"
+            VALUE "ProductName", "TODO: <产品名>"
+            VALUE "ProductVersion", "1.0.0.1"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x804, 936
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO 
+BEGIN
+    IDD_ABOUTBOX, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 163
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 55
+    END
+
+    IDD_IPSEARCH_DIALOG, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 320
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 307
+    END
+
+    IDD_SETTING_DIALOG, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 309
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 176
+    END
+
+    IDD_BITCONFIG_DIALOG, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 344
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 219
+    END
+
+    IDD_VIDEO_DIALOG, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 431
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 212
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE 
+BEGIN
+    IDS_ABOUTBOX            "关于 IPSearch(&A)..."
+END
+
+#endif    // Chinese (P.R.C.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+#define _AFX_NO_SPLITTER_RESOURCES
+#define _AFX_NO_OLE_RESOURCES
+#define _AFX_NO_TRACKER_RESOURCES
+#define _AFX_NO_PROPERTY_RESOURCES
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_CHS)
+LANGUAGE 4, 2
+#pragma code_page(936)
+#include "res\IPSearch.rc2"  // 非 Microsoft Visual C++ 编辑的资源
+#include "l.CHS\afxres.rc"      // 标准组件
+#endif
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+
