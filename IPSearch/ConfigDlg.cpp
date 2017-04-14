@@ -44,7 +44,9 @@ void CConfigDlg::OnBnClickedBtnOk()
 	m_Configs.bInterphoneTest    = (((CButton*)GetDlgItem(IDC_CHECK_PHONE))->GetCheck() == BST_CHECKED);
 	m_Configs.bPtzTest    = (((CButton*)GetDlgItem(IDC_CHECK_PTZ))->GetCheck() == BST_CHECKED);
 	m_Configs.bIrcutTest    = (((CButton*)GetDlgItem(IDC_CHECK_IRCUT))->GetCheck() == BST_CHECKED);
-	m_Configs.SaveToolSetting(_T(""));
+	m_Configs.bWriteUid    = (((CButton*)GetDlgItem(IDC_CHECK_UID))->GetCheck() == BST_CHECKED);
+	m_Configs.bWriteMac    = (((CButton*)GetDlgItem(IDC_CHECK_LANMAC))->GetCheck() == BST_CHECKED);
+	//m_Configs.SaveToolSetting(_T(""));
 	CConfigDlg::OnOK();
 }
 
@@ -61,6 +63,8 @@ BOOL CConfigDlg::OnInitDialog()
 	((CButton*)GetDlgItem(IDC_CHECK_PHONE    ))->SetCheck(m_Configs.bInterphoneTest                ?BST_CHECKED:BST_UNCHECKED);
 	((CButton*)GetDlgItem(IDC_CHECK_PTZ    ))->SetCheck(m_Configs.bPtzTest                ?BST_CHECKED:BST_UNCHECKED);
 	((CButton*)GetDlgItem(IDC_CHECK_IRCUT    ))->SetCheck(m_Configs.bIrcutTest                ?BST_CHECKED:BST_UNCHECKED);
+	((CButton*)GetDlgItem(IDC_CHECK_UID    ))->SetCheck(m_Configs.bWriteUid                ?BST_CHECKED:BST_UNCHECKED);
+	((CButton*)GetDlgItem(IDC_CHECK_LANMAC    ))->SetCheck(m_Configs.bWriteMac                ?BST_CHECKED:BST_UNCHECKED);
 	return TRUE;  // return TRUE unless you set the focus to a control
 	// EXCEPTION: OCX Property Pages should return FALSE
 }

@@ -205,6 +205,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\debug.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\IPSearch.cpp"
 				>
 			</File>
@@ -214,6 +218,10 @@
 			</File>
 			<File
 				RelativePath=".\JsonConvert.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\PcbaTest.cpp"
 				>
 			</File>
 			<File
@@ -272,6 +280,10 @@
 			</File>
 			<File
 				RelativePath=".\JsonConvert.h"
+				>
+			</File>
+			<File
+				RelativePath=".\PcbaTest .h"
 				>
 			</File>
 			<File

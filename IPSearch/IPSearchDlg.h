@@ -11,6 +11,7 @@
 #include "JsonConvert.h"
 #include "XListBox/XListBox.h"
 #include "debug.h"
+#include "PcbaTest .h"
 
 typedef struct  
 {
@@ -21,7 +22,7 @@ typedef struct
 typedef struct
 {
 	std::wstring TestName;
-	bool bTest;
+	int nTestStatus;//0--未测试，1---测试中，2----测试成功，-1----测试失败
 }TestCase,STRUCT_TEST_CASE;
 typedef vector<STRUCT_TEST_CASE> TEST_CASE_VECTOR;
 // CIPSearchDlg 对话框
@@ -59,14 +60,16 @@ public:
 	bool		m_bNext;
 	bool		m_bExit;
 	bool		m_bRun;
+	bool		m_bTestPass;//记录所有测试项测试结果，全部通过为True，有部分没有通过则为False
 	CWinThread  *m_pTestThread;
 	CWinThread  *m_pRecvThread;
 	SOCKET		m_TestSocket;
 	TEST_CASE_VECTOR m_TestCaseList;
 	CJsonConvert m_Json;
+	CPcbaTest	m_DevTest;
 	//CVideoDlg	m_VideoDlg;
 	CXListBox   m_listInfo;
-	//CLogger     *m_pLog;
+	CLogger     *m_pLog;
 public:
 	void GetOtherIp();
 	void initTestCase();
@@ -89,4 +92,5 @@ public:
 	afx_msg void OnBnClickedButtonNext();
 	afx_msg LRESULT OnHandleUpdateConfigMsg(WPARAM wParam,LPARAM lParam);
 	afx_msg void OnBnClickedButtonPass();
+	afx_msg void OnBnClickedButtonFail();
 };

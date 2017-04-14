@@ -13,6 +13,8 @@ int socket_write(SOCKET socket_fd, std::string strMsg);
 int socket_read(SOCKET socket_fd, std::string &strMsg);
 // 关闭套接字
 void socket_close(SOCKET socket_fd);
+//设置超时
+void Timeout(SOCKET socket_fd,int delay);
 // 连接服务器
 //int socket_connect(const char * ip, unsigned short port);
 

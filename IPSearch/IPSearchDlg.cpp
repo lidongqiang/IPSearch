@@ -101,7 +101,7 @@ END_MESSAGE_MAP()
 
 
 CIPSearchDlg::CIPSearchDlg(CWnd* pParent /*=NULL*/)
-	: CDialog(CIPSearchDlg::IDD, pParent),m_listSelect(-1),m_bRun(false)
+	: CDialog(CIPSearchDlg::IDD, pParent),m_listSelect(-1),m_bRun(false),m_bTestPass(false)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
@@ -126,6 +126,7 @@ BEGIN_MESSAGE_MAP(CIPSearchDlg, CDialog)
 	ON_BN_CLICKED(IDC_BTN_PLAYER, &CIPSearchDlg::OnBnClickedBtnPlayer)
 	ON_BN_CLICKED(IDC_BUTTON_NEXT, &CIPSearchDlg::OnBnClickedButtonNext)
 	ON_BN_CLICKED(IDC_BUTTON_PASS, &CIPSearchDlg::OnBnClickedButtonPass)
+	ON_BN_CLICKED(IDC_BUTTON_FAIL, &CIPSearchDlg::OnBnClickedButtonFail)
 END_MESSAGE_MAP()
 
 
@@ -193,7 +194,6 @@ BOOL CIPSearchDlg::OnInitDialog()
 		}
 	}
 	m_Configs.LoadToolSetting((LPCTSTR)(m_strModulePath+ TEXT("config.ini")));
-	initTestCase();
 
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
@@ -346,7 +346,7 @@ void CIPSearchDlg::OnBnClickedBtnSerch()
 	// TODO: Add your control notification handler code here
 
 	//CString strUid,strAddr,strDevname;
-	std:string strUid,strAddr,strDevname;
+	std::string strUid,strAddr,strDevname;
 	m_listDevice.DeleteAllItems();
 
 	WORD wVersionRequested = MAKEWORD(2, 2);  
@@ -565,7 +565,7 @@ void CIPSearchDlg::OnBnClickedButtonTest()
 		if(m_pRecvThread!=NULL)
 		{
 			WaitForSingleObject(m_pRecvThread->m_hThread,INFINITE);
-			m_pRecvThread == NULL;
+			m_pRecvThread = NULL;
 		}
 		this->SetDlgItemText(IDC_BUTTON_TEST,_T("开始测试"));
 		AddPrompt(_T("用户取消"),TRUE);
@@ -675,10 +675,13 @@ BOOL CIPSearchDlg::TestProc()
 {
 	//1.开始测试  向设备端发送命令命令{"TYPE":"CMD", "CMD":"ENTER" }
 	int ret;
-	std::string strMsg,strSta;
-	int nErrCode;
-	char recvMsg[255];
+	int i;
+	int nSdCardTest=-1;
+	int nWifiTest=-1;
+	std::string strMsg,strSta,strOutput;
+	//int nErrCode;
 	CString strPrompt;
+	CPcbaTest DevTest;
 
 	m_bRun = TRUE;
 	if (m_listInfo.GetCount()>0) {
@@ -735,7 +738,7 @@ BOOL CIPSearchDlg::TestProc()
 	//RtspPlay();
 
 	//3.创建接收设备端的消息的线程，专门用于接收设备端消息
-	m_pRecvThread = AfxBeginThread(RecvDeviceThread,this);
+	//m_pRecvThread = AfxBeginThread(RecvDeviceThread,this);
 
 
 	//4.下载测试程序，发送开始测试命令，{"TYPE":"CMD", "TEST_ITEM":"KEY-TEST", "CMD":"START" }
@@ -744,29 +747,123 @@ BOOL CIPSearchDlg::TestProc()
 	{
 		strPrompt.Format(_T("开始SD卡测试..."));
 		AddPrompt(strPrompt);
-		m_Json.ItemtoJson("TYPE","CMD","TEST_ITEM",wstr2str(m_Configs.strSdcardName),"CMD","START",strMsg);
-		ret = socket_write(m_TestSocket,strMsg);
-		if (ret < 0)
+		ret = m_DevTest.StartTestItem(m_TestSocket,wstr2str(m_Configs.strSdcardName));
+		if (ret<0)
 		{
-			//AfxMessageBox(_T("socket:send data failed"));
-			strPrompt.Format(_T("sdcard_test:socket:send data failed"));
+			strPrompt.Format(_T("SD卡测试失败，错误码(%d)"),ret);
 			AddPrompt(strPrompt,TRUE);
-			return FALSE;
+		}
+		else
+		{
+			nSdCardTest=0;
 		}
 	}
 	if (m_Configs.bWifiTest)
 	{
-		strPrompt.Format(_T("开始SD卡测试..."));
+		strPrompt.Format(_T("开始Wifi测试..."));
 		AddPrompt(strPrompt);
-		m_Json.ItemtoJson("TYPE","CMD","TEST_ITEM",wstr2str(m_Configs.strWifiName),"CMD","START",strMsg);
-		ret = socket_write(m_TestSocket,strMsg);
-		if (ret < 0)
+		ret = m_DevTest.StartTestItem(m_TestSocket,wstr2str(m_Configs.strWifiName));
+		if (ret<0)
 		{
-			//AfxMessageBox(_T("socket:send data failed"));
-			strPrompt.Format(_T("sdcard_test:socket:send data failed"));
+			strPrompt.Format(_T("Wifi测试失败，错误码(%d)"),ret);
 			AddPrompt(strPrompt,TRUE);
-			return FALSE;
 		}
+		else
+		{
+			nWifiTest = 0;
+		}
+	}
+
+	initTestCase();
+	for (i=0;i<m_TestCaseList.size();i++)
+	{
+		if (m_TestCaseList[i].nTestStatus == 0)
+		{
+			strPrompt.Format(_T("%s开始测试..."),m_TestCaseList[i].TestName.c_str());
+			AddPrompt(strPrompt);
+			m_TestCaseList[i].nTestStatus = 1;
+			ret = DevTest.StartTestItem(m_TestSocket,wstr2str(m_TestCaseList[i].TestName));
+			if (ret<0)
+			{
+				strPrompt.Format(_T("%s开始测试失败,错误码(%d)"),m_TestCaseList[i].TestName.c_str(),ret);
+				AddPrompt(strPrompt,TRUE);
+			}
+			if (m_TestCaseList[i].TestName.compare(m_Configs.strKeyName)==0)
+			{
+				while(m_TestCaseList[i].nTestStatus==1)
+				{
+					ret = m_DevTest.QueryTestItem(m_TestSocket,wstr2str(m_Configs.strKeyName),strOutput);
+					if (ret < 0)
+					{
+						//m_TestCaseList[i].nTestStatus = -1;
+						strPrompt.Format(_T("%s测试失败,错误码(%d)"),m_TestCaseList[i].TestName.c_str(),ret);
+						AddPrompt(strPrompt,TRUE);
+						break;
+					}
+					else if (ret == 2)
+					{
+						strPrompt.Format(_T("%s测试:%s按键按下"),m_TestCaseList[i].TestName.c_str(),str2wstr(strOutput).c_str());
+						AddPrompt(strPrompt,TRUE);
+						break;
+					}
+					Sleep(1000);
+				}
+			}
+			break;
+		}
+	}
+	while ((nSdCardTest==0)||(nWifiTest==0))
+	{
+		if (nSdCardTest==0)		//测试中
+		{
+			ret = m_DevTest.QueryTestItem(m_TestSocket,wstr2str(m_Configs.strSdcardName),strOutput);
+			if (ret==1)
+			{
+				ret = m_DevTest.CommitResult(m_TestSocket,wstr2str(m_Configs.strSdcardName));
+				if (ret<0)
+				{
+					strPrompt.Format(_T("%s测试失败,错误码(%d)"),m_Configs.strSdcardName.c_str(),ret);
+					AddPrompt(strPrompt,TRUE);
+				}
+				else
+				{
+					strPrompt.Format(_T("%s测试成功"),m_Configs.strSdcardName.c_str());
+					AddPrompt(strPrompt);
+				}
+				nSdCardTest=1;
+			}else if (ret<0)
+			{
+				strPrompt.Format(_T("%s测试失败,错误码(%d)"),m_Configs.strSdcardName.c_str(),ret);
+				AddPrompt(strPrompt,TRUE);
+				nSdCardTest=1;
+			}
+		}
+
+		if (nWifiTest==0)		//测试中
+		{
+			ret = m_DevTest.QueryTestItem(m_TestSocket,wstr2str(m_Configs.strWifiName),strOutput);
+			if (ret==1)
+			{
+				ret = m_DevTest.CommitResult(m_TestSocket,wstr2str(m_Configs.strWifiName));
+				if (ret<0)
+				{
+					strPrompt.Format(_T("%s测试失败,错误码(%d)"),m_Configs.strWifiName.c_str(),ret);
+					AddPrompt(strPrompt,TRUE);
+				}
+				else
+				{
+					strPrompt.Format(_T("%s测试成功"),m_Configs.strWifiName.c_str());
+					AddPrompt(strPrompt);
+				}
+				nWifiTest=1;
+			}else if (ret<0)
+			{
+				strPrompt.Format(_T("%s测试失败,错误码(%d)"),m_Configs.strWifiName.c_str(),ret);
+				AddPrompt(strPrompt,TRUE);
+				nWifiTest=1;
+			}
+		}
+		Sleep(1000);
 	}
 
 	return TRUE;
@@ -797,11 +894,12 @@ int CIPSearchDlg::connect_dev()
 		return -2;
 	}
 
-	int nNetTimeout=3000;//5秒
+	//int nNetTimeout=3000;//5秒
 	//设置发送超时
-	setsockopt(m_TestSocket,SOL_SOCKET,SO_SNDTIMEO,(char *)&nNetTimeout,sizeof(int));
+	//setsockopt(m_TestSocket,SOL_SOCKET,SO_SNDTIMEO,(char *)&nNetTimeout,sizeof(int));
 	//设置接收超时
 	//setsockopt(m_TestSocket,SOL_SOCKET,SO_RCVTIMEO,(char *)&nNetTimeout,sizeof(int));
+	Timeout(m_TestSocket,3000);
 
 	SOCKADDR_IN addrSrv; 
 	addrSrv.sin_addr.S_un.S_addr=inet_addr(wstr2str((LPCTSTR)m_strIp).c_str()); 
@@ -816,6 +914,7 @@ int CIPSearchDlg::connect_dev()
 	}
 	return 0;
 }
+//自动测试项测试信息更新
 void CIPSearchDlg::UpdateTestInfo(std::string strMsg)
 {
 	std::string strSta,strRes,strTestItem,strResult;
@@ -830,6 +929,7 @@ void CIPSearchDlg::UpdateTestInfo(std::string strMsg)
 	{
 		strInfo.Format(_T("%s 测试失败(错误码:%d)"),str2wstr(strTestItem).c_str(),nErrCode);
 		AddPrompt(strInfo,TRUE);
+		m_bTestPass = false;
 	}
 
 	//3.测试结束，保存测试结果成功 （测试项名称+成功）
@@ -848,33 +948,33 @@ void CIPSearchDlg::initTestCase()
 	if (m_Configs.bIrcutTest)
 	{
 		TestCase.TestName = m_Configs.strIrcutName;
-		TestCase.bTest = false;
+		TestCase.nTestStatus = 0;
+		m_TestCaseList.push_back(TestCase);
 	}
-	m_TestCaseList.push_back(TestCase);
 	if (m_Configs.bMonitorTest)
 	{
 		TestCase.TestName = m_Configs.strMonitorName;
-		TestCase.bTest = false;
+		TestCase.nTestStatus = 0;
+		m_TestCaseList.push_back(TestCase);
 	}
-	m_TestCaseList.push_back(TestCase);
 	if (m_Configs.bInterphoneTest)
 	{
 		TestCase.TestName = m_Configs.strInterphoneName;
-		TestCase.bTest = false;
+		TestCase.nTestStatus = 0;
+		m_TestCaseList.push_back(TestCase);
 	}
-	m_TestCaseList.push_back(TestCase);
 	if (m_Configs.bPtzTest)
 	{
 		TestCase.TestName = m_Configs.strPtzName;
-		TestCase.bTest = false;
+		TestCase.nTestStatus = 0;
+		m_TestCaseList.push_back(TestCase);
 	}
-	m_TestCaseList.push_back(TestCase);
 	if (m_Configs.bKeyTest)
 	{
-		TestCase.TestName = m_Configs.strPtzName;
-		TestCase.bTest = false;
+		TestCase.TestName = m_Configs.strKeyName;
+		TestCase.nTestStatus = 0;
+		m_TestCaseList.push_back(TestCase);
 	}
-	m_TestCaseList.push_back(TestCase);
 
 }
 BOOL CIPSearchDlg::RecvProc()
@@ -970,7 +1070,7 @@ void CIPSearchDlg::OnBnClickedButtonNext()
 		{
 			WaitForSingleObject(m_pRecvThread->m_hThread,INFINITE);
 			closesocket(m_TestSocket);
-			m_pRecvThread == NULL;
+			m_pRecvThread = NULL;
 		}
 		m_strIp = m_listDevice.GetItemText(m_listSelect, 1);
 		TestProc();
@@ -985,5 +1085,133 @@ void CIPSearchDlg::OnBnClickedButtonNext()
 void CIPSearchDlg::OnBnClickedButtonPass()
 {
 	// TODO: Add your control notification handler code here
-	//有无勾选该测试项
+	int ret;
+	int i;
+	CString strPrompt;
+	std::string strOutput;
+	//1.获取当前测试项，保存测试结果，设置测试状态为已测试
+	for (i=0;i<m_TestCaseList.size();i++)
+	{
+		if (m_TestCaseList[i].nTestStatus == 1)
+		{
+			strPrompt.Format(_T("%s保存测试结果..."),m_TestCaseList[i].TestName.c_str());
+			AddPrompt(strPrompt);
+			ret = m_DevTest.CommitResult(m_TestSocket,wstr2str(m_TestCaseList[i].TestName));
+			if (ret<0)
+			{
+				strPrompt.Format(_T("%s保存测试结果失败"),m_TestCaseList[i].TestName.c_str());
+				AddPrompt(strPrompt,TRUE);
+				m_TestCaseList[i].nTestStatus = -1;
+				m_bTestPass = false;
+				break;
+			}
+
+			strPrompt.Format(_T("%s保存测试结果成功"),m_TestCaseList[i].TestName.c_str());
+			AddPrompt(strPrompt);
+			m_TestCaseList[i].nTestStatus = 2;
+			break;
+		}
+	}
+
+	//2.获取下一个未测试的测试项
+	for (i=0;i<m_TestCaseList.size();i++)
+	{
+		if (m_TestCaseList[i].nTestStatus == 0)
+		{
+			strPrompt.Format(_T("%s开始测试..."),m_TestCaseList[i].TestName.c_str());
+			AddPrompt(strPrompt);
+			ret = m_DevTest.StartTestItem(m_TestSocket,wstr2str(m_TestCaseList[i].TestName));
+			m_TestCaseList[i].nTestStatus = 1;
+			if (ret<0)
+			{
+				strPrompt.Format(_T("%s开始测试失败,错误码(%d)"),m_TestCaseList[i].TestName.c_str(),ret);
+				AddPrompt(strPrompt,True);
+			}
+			break;
+		}
+	}
+	if (m_TestCaseList[i].TestName.compare(m_Configs.strKeyName)==0)
+	{
+		while(m_TestCaseList[i].nTestStatus==1)
+		{
+			ret = m_DevTest.QueryTestItem(m_TestSocket,wstr2str(m_Configs.strKeyName),strOutput);
+			if (ret < 0)
+			{
+				strPrompt.Format(_T("%s测试失败,错误码(%d)"),m_TestCaseList[i].TestName.c_str(),ret);
+				AddPrompt(strPrompt,TRUE);
+				break;
+			}
+			else if (ret == 2)
+			{
+				strPrompt.Format(_T("%s测试:%s按键按下"),m_TestCaseList[i].TestName.c_str(),str2wstr(strOutput).c_str());
+				AddPrompt(strPrompt,TRUE);
+				break;
+			}
+			Sleep(1000);
+		}
+	}
+	if (i==m_TestCaseList.size()&&m_bTestPass)
+	{
+		//所有测试项都测试完成,写号
+		std::string strWriteMsg;
+		m_DevTest.WriteUidAndLanMac(m_TestSocket,wstr2str(m_Configs.strWriteName),strWriteMsg);
+	}
+}
+
+void CIPSearchDlg::OnBnClickedButtonFail()
+{
+	// TODO: Add your control notification handler code here
+	int ret;
+	int i,j;
+	std::string strOutput;
+	CString strPrompt;
+	m_bTestPass = false;
+	//获取下一个未测试的测试项
+	for (i=0;i<m_TestCaseList.size();i++)
+	{
+		if (m_TestCaseList[i].nTestStatus == 1)
+		{
+			m_TestCaseList[i].nTestStatus = -1;
+		}
+		if (m_TestCaseList[i].nTestStatus == 0)
+		{
+			strPrompt.Format(_T("%s开始测试..."),m_TestCaseList[i].TestName.c_str());
+			AddPrompt(strPrompt);
+			m_TestCaseList[i].nTestStatus = 1;
+			ret = m_DevTest.StartTestItem(m_TestSocket,wstr2str(m_TestCaseList[i].TestName));
+			if (ret<0)
+			{
+				strPrompt.Format(_T("%s开始测试失败,错误码(%d)"),m_TestCaseList[i].TestName.c_str(),ret);
+				AddPrompt(strPrompt,True);
+				break;
+			}
+			if (m_TestCaseList[i].TestName.compare(m_Configs.strKeyName)==0)
+			{
+				while(m_TestCaseList[i].nTestStatus==1)
+				{
+					ret = m_DevTest.QueryTestItem(m_TestSocket,wstr2str(m_Configs.strKeyName),strOutput);
+					if (ret < 0)
+					{
+						strPrompt.Format(_T("%s测试失败,错误码(%d)"),m_TestCaseList[i].TestName.c_str(),ret);
+						AddPrompt(strPrompt,TRUE);
+						break;
+					}
+					else if (ret == 2)
+					{
+						strPrompt.Format(_T("%s测试:%s按键按下"),m_TestCaseList[i].TestName.c_str(),str2wstr(strOutput).c_str());
+						AddPrompt(strPrompt,TRUE);
+						break;
+					}
+					Sleep(1000);
+				}
+			}
+			break;
+		}
+	}
+
+	if (i==m_TestCaseList.size())
+	{
+		strPrompt.Format(_T("所有测试完成"));
+		AddPrompt(strPrompt);
+	}
 }

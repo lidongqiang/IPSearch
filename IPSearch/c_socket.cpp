@@ -162,7 +162,14 @@ void socket_close(SOCKET socket_fd)
     Sleep(2);
 }
 
-
+void Timeout(SOCKET socket_fd,int delay)
+{
+	//int nNetTimeout=3000;//5秒
+	//设置发送超时
+	setsockopt(socket_fd,SOL_SOCKET,SO_SNDTIMEO,(char *)&delay,sizeof(int));
+	//设置接收超时
+	setsockopt(socket_fd,SOL_SOCKET,SO_RCVTIMEO,(char *)&delay,sizeof(int));
+}
 //int socket_connect(const char * ip, unsigned short port)
 //{
 //    int ret = 0;

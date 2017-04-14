@@ -297,6 +297,8 @@ bool CIniSettingBase::LoadToolSetting(std::wstring strConfig)
 	bInterphoneTest		= 1 == _wtoi(GetStr(TEXT("InterphoneTest")).c_str());
 	bPtzTest			= 1 == _wtoi(GetStr(TEXT("PtzTest")).c_str());
 	bIrcutTest			= 1 == _wtoi(GetStr(TEXT("IrcutTest")).c_str());
+	bWriteUid			= 1 == _wtoi(GetStr(TEXT("WriteUid")).c_str());
+	bWriteMac			= 1 == _wtoi(GetStr(TEXT("WriteMac")).c_str());
 	strSdcardName		= GetStr(TEXT("EmmcName"));
 	strWifiName			= GetStr(TEXT("WifiName"));
 	strKeyName			= GetStr(TEXT("KeyName"));
@@ -304,6 +306,7 @@ bool CIniSettingBase::LoadToolSetting(std::wstring strConfig)
 	strInterphoneName	= GetStr(TEXT("InterphoneName"));
 	strPtzName			= GetStr(TEXT("PtzName"));
 	strIrcutName		= GetStr(TEXT("IrcutName"));
+	strWriteName		= GetStr(TEXT("WriteName"));
 	///********************** DevSn **********************/
 	//devsn.bEnable		= _wtoi(GetStr(TEXT("DSWR")).c_str());
 	//devsn.strPrefix		= GetStr(TEXT("DSPF"));
@@ -496,6 +499,8 @@ bool CIniSettingBase::SaveToolSetting(std::wstring strConfig)
 		SetStr( TEXT("InterphoneTest")    		, bInterphoneTest ?checke:unckeck);
 		SetStr( TEXT("PtzTest")    		, bPtzTest ?checke:unckeck);
 		SetStr( TEXT("IrcutTest")    		, bIrcutTest ?checke:unckeck);
+		SetStr( TEXT("WriteUid")    		, bWriteUid ?checke:unckeck);
+		SetStr( TEXT("WriteMac")    		, bWriteMac ?checke:unckeck);
 		return pIniFile->Save(szFileName);
 	}
 

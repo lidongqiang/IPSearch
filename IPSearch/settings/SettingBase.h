@@ -155,6 +155,7 @@ public:
 	std::wstring strInterphoneName;
 	std::wstring strPtzName;
 	std::wstring strIrcutName;
+	std::wstring strWriteName;
 
 	bool bSdcardTest;
 	bool bWifiTest;
@@ -163,6 +164,8 @@ public:
 	bool bInterphoneTest;
 	bool bPtzTest;
 	bool bIrcutTest;
+	bool bWriteUid;
+	bool bWriteMac;
 };
 class CIniLocalLan:public CSettingBase
 {
