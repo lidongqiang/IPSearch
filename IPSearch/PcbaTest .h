@@ -3,6 +3,7 @@
 #include <vector>
 #include "JsonConvert.h"
 #include "debug.h"
+#define LOG(A)
 #define LOGER(a) if(m_pLogger) m_pLogger->PrintMSGA a
 
 
@@ -14,13 +15,17 @@ public:
 	CJsonConvert m_Json;
 
 public:
-	//CPcbaTest();
+	CPcbaTest();
 	//~CPcbaTest();
 	void StartLog(CLogger *pLogger) {
 		m_pLogger = pLogger;
 	}
 	void StopLog(){
 		m_pLogger = NULL;
+	}
+	bool stringCompareIgnoreCase(std::string lhs,std::string rhs)
+	{
+		return _stricmp(lhs.c_str(),rhs.c_str());
 	}
 	int EnterTestMode(SOCKET TestSocket);
 	int ExitTest(SOCKET TestSocket);

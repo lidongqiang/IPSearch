@@ -307,6 +307,8 @@ bool CIniSettingBase::LoadToolSetting(std::wstring strConfig)
 	strPtzName			= GetStr(TEXT("PtzName"));
 	strIrcutName		= GetStr(TEXT("IrcutName"));
 	strWriteName		= GetStr(TEXT("WriteName"));
+	strLogPath              = GetStr(TEXT("LogPath"));
+	nLogLevel           = _wtoi(GetStr(TEXT("LogLevel")).c_str());
 	///********************** DevSn **********************/
 	//devsn.bEnable		= _wtoi(GetStr(TEXT("DSWR")).c_str());
 	//devsn.strPrefix		= GetStr(TEXT("DSPF"));
@@ -501,6 +503,7 @@ bool CIniSettingBase::SaveToolSetting(std::wstring strConfig)
 		SetStr( TEXT("IrcutTest")    		, bIrcutTest ?checke:unckeck);
 		SetStr( TEXT("WriteUid")    		, bWriteUid ?checke:unckeck);
 		SetStr( TEXT("WriteMac")    		, bWriteMac ?checke:unckeck);
+		SetStr( TEXT("LogPath")     	, strLogPath);
 		return pIniFile->Save(szFileName);
 	}
 

@@ -93,4 +93,5 @@ public:
 	afx_msg LRESULT OnHandleUpdateConfigMsg(WPARAM wParam,LPARAM lParam);
 	afx_msg void OnBnClickedButtonPass();
 	afx_msg void OnBnClickedButtonFail();
+	afx_msg void OnClose();
 };

@@ -156,6 +156,8 @@ public:
 	std::wstring strPtzName;
 	std::wstring strIrcutName;
 	std::wstring strWriteName;
+	std::wstring strLogPath;
+	int			nLogLevel;
 
 	bool bSdcardTest;
 	bool bWifiTest;

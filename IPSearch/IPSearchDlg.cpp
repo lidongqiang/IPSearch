@@ -127,6 +127,7 @@ BEGIN_MESSAGE_MAP(CIPSearchDlg, CDialog)
 	ON_BN_CLICKED(IDC_BUTTON_NEXT, &CIPSearchDlg::OnBnClickedButtonNext)
 	ON_BN_CLICKED(IDC_BUTTON_PASS, &CIPSearchDlg::OnBnClickedButtonPass)
 	ON_BN_CLICKED(IDC_BUTTON_FAIL, &CIPSearchDlg::OnBnClickedButtonFail)
+	ON_WM_CLOSE()
 END_MESSAGE_MAP()
 
 
@@ -195,6 +196,12 @@ BOOL CIPSearchDlg::OnInitDialog()
 	}
 	m_Configs.LoadToolSetting((LPCTSTR)(m_strModulePath+ TEXT("config.ini")));
 
+	if(m_Configs.nLogLevel != DLEVEL_NONE ) {
+		CLogger::DEBUG_LEVEL level = m_Configs.nLogLevel == DLEVEL_DEBUG?CLogger::DEBUG_ALL:
+			(m_Configs.nLogLevel  == DLEVEL_INFO ?CLogger::DEBUG_INFO:CLogger::DEBUG_ERROR);
+	m_pLog = CLogger::StartLog((m_Configs.strLogPath + TEXT("IPCameraTool-") + CLogger::TimeStr(true, true)).c_str(), level);    
+	}
+	LDEGMSGW((CLogger::DEBUG_INFO, _T("IPCameraTool start run")));
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
 
@@ -268,7 +275,7 @@ void CIPSearchDlg::AddPrompt(CString strPrompt,BOOL bError,INT iColor)
 	PSTRUCT_LIST_LINE   pLine=NULL;
 	CString             strTime;
 	SYSTEMTIME          curTime;
-	//LDEGMSGW((CLogger::DEBUG_INFO, TEXT("Info:%s"),(LPCTSTR)strPrompt));
+	LDEGMSGW((CLogger::DEBUG_INFO, TEXT("Info:%s"),(LPCTSTR)strPrompt));
 	GetLocalTime( &curTime );
 	strTime.Format(_T("%02d:%02d:%02d %03d\t"),curTime.wHour,curTime.wMinute,curTime.wSecond,curTime.wMilliseconds);
 	strPrompt   = strTime + strPrompt;
@@ -531,16 +538,16 @@ bool CIPSearchDlg::OnStartTest()
 
 	if (m_listSelect != -1)
 	{
-		//m_pTestThread = AfxBeginThread(TestDeviceThread,this);
-		//if(NULL == m_pTestThread) {
-		//	goto OnStartTestExit; /*generrally never to here **/
-		//}
+		m_pTestThread = AfxBeginThread(TestDeviceThread,this);
+		if(NULL == m_pTestThread) {
+			goto OnStartTestExit; /*generrally never to here **/
+		}
 		////创建接收设备端的消息的线程，专门用于接收设备端消息
 		//m_pRecvThread = AfxBeginThread(RecvDeviceThread,this);
 		//if(NULL == m_pRecvThread) {
 		//	goto OnStartTestExit; /*generrally never to here **/
 		//}
-		TestProc();
+		//TestProc();
 	}
 	else
 	{
@@ -562,11 +569,11 @@ void CIPSearchDlg::OnBnClickedButtonTest()
 		this->SetDlgItemText(IDC_BUTTON_TEST,_T("停止中"));
 		m_bRun = false;
 		closesocket(m_TestSocket);
-		if(m_pRecvThread!=NULL)
-		{
-			WaitForSingleObject(m_pRecvThread->m_hThread,INFINITE);
-			m_pRecvThread = NULL;
-		}
+		//if(m_pRecvThread!=NULL)
+		//{
+		//	WaitForSingleObject(m_pRecvThread->m_hThread,INFINITE);
+		//	m_pRecvThread = NULL;
+		//}
 		this->SetDlgItemText(IDC_BUTTON_TEST,_T("开始测试"));
 		AddPrompt(_T("用户取消"),TRUE);
 	}
@@ -681,12 +688,15 @@ BOOL CIPSearchDlg::TestProc()
 	std::string strMsg,strSta,strOutput;
 	//int nErrCode;
 	CString strPrompt;
-	CPcbaTest DevTest;
+	CLogger         *logger = NULL;
 
 	m_bRun = TRUE;
 	if (m_listInfo.GetCount()>0) {
 		PostMessage(WM_UPDATE_MSG,UPDATE_LIST,LIST_EMPTY);
 	}
+	CLogger::DEBUG_LEVEL level = CLogger::DEBUG_ALL;
+	logger = CLogger::StartLog((m_Configs.strLogPath + TEXT("\\") + CLogger::TimeStr(true, true)).c_str(), level);    
+	if(logger) m_DevTest.StartLog(logger);
 	//1.连接设备
 	strPrompt.Format(_T("连接设备(%s)..."),m_strIp);
 	AddPrompt(strPrompt);
@@ -782,7 +792,7 @@ BOOL CIPSearchDlg::TestProc()
 			strPrompt.Format(_T("%s开始测试..."),m_TestCaseList[i].TestName.c_str());
 			AddPrompt(strPrompt);
 			m_TestCaseList[i].nTestStatus = 1;
-			ret = DevTest.StartTestItem(m_TestSocket,wstr2str(m_TestCaseList[i].TestName));
+			ret = m_DevTest.StartTestItem(m_TestSocket,wstr2str(m_TestCaseList[i].TestName));
 			if (ret<0)
 			{
 				strPrompt.Format(_T("%s开始测试失败,错误码(%d)"),m_TestCaseList[i].TestName.c_str(),ret);
@@ -865,7 +875,7 @@ BOOL CIPSearchDlg::TestProc()
 		}
 		Sleep(1000);
 	}
-
+    m_pTestThread = NULL;
 	return TRUE;
 }
 std::wstring CIPSearchDlg::GetLocalString(std::wstring strKey)
@@ -1094,8 +1104,8 @@ void CIPSearchDlg::OnBnClickedButtonPass()
 	{
 		if (m_TestCaseList[i].nTestStatus == 1)
 		{
-			strPrompt.Format(_T("%s保存测试结果..."),m_TestCaseList[i].TestName.c_str());
-			AddPrompt(strPrompt);
+			//strPrompt.Format(_T("%s保存测试结果..."),m_TestCaseList[i].TestName.c_str());
+			//AddPrompt(strPrompt);
 			ret = m_DevTest.CommitResult(m_TestSocket,wstr2str(m_TestCaseList[i].TestName));
 			if (ret<0)
 			{
@@ -1126,34 +1136,36 @@ void CIPSearchDlg::OnBnClickedButtonPass()
 			{
 				strPrompt.Format(_T("%s开始测试失败,错误码(%d)"),m_TestCaseList[i].TestName.c_str(),ret);
 				AddPrompt(strPrompt,True);
+				break;
 			}
-			break;
 		}
-	}
-	if (m_TestCaseList[i].TestName.compare(m_Configs.strKeyName)==0)
-	{
-		while(m_TestCaseList[i].nTestStatus==1)
+		if (m_TestCaseList[i].TestName.compare(m_Configs.strKeyName)==0)
 		{
-			ret = m_DevTest.QueryTestItem(m_TestSocket,wstr2str(m_Configs.strKeyName),strOutput);
-			if (ret < 0)
+			while(m_TestCaseList[i].nTestStatus==1)
 			{
-				strPrompt.Format(_T("%s测试失败,错误码(%d)"),m_TestCaseList[i].TestName.c_str(),ret);
-				AddPrompt(strPrompt,TRUE);
-				break;
+				ret = m_DevTest.QueryTestItem(m_TestSocket,wstr2str(m_Configs.strKeyName),strOutput);
+				if (ret < 0)
+				{
+					strPrompt.Format(_T("%s测试失败,错误码(%d)"),m_TestCaseList[i].TestName.c_str(),ret);
+					AddPrompt(strPrompt,TRUE);
+					break;
+				}
+				else if (ret == 2)
+				{
+					strPrompt.Format(_T("%s测试:%s按键按下"),m_TestCaseList[i].TestName.c_str(),str2wstr(strOutput).c_str());
+					AddPrompt(strPrompt,TRUE);
+					break;
+				}
+				Sleep(1000);
 			}
-			else if (ret == 2)
-			{
-				strPrompt.Format(_T("%s测试:%s按键按下"),m_TestCaseList[i].TestName.c_str(),str2wstr(strOutput).c_str());
-				AddPrompt(strPrompt,TRUE);
-				break;
-			}
-			Sleep(1000);
 		}
 	}
 	if (i==m_TestCaseList.size()&&m_bTestPass)
 	{
 		//所有测试项都测试完成,写号
 		std::string strWriteMsg;
+		strPrompt.Format(_T("测试完成"));
+		AddPrompt(strPrompt);
 		m_DevTest.WriteUidAndLanMac(m_TestSocket,wstr2str(m_Configs.strWriteName),strWriteMsg);
 	}
 }
@@ -1214,4 +1226,14 @@ void CIPSearchDlg::OnBnClickedButtonFail()
 		strPrompt.Format(_T("所有测试完成"));
 		AddPrompt(strPrompt);
 	}
+}
+
+void CIPSearchDlg::OnClose()
+{
+	// TODO: Add your message handler code here and/or call default
+	if(m_pLog) {
+		delete m_pLog;
+		m_pLog = NULL;
+	}
+	CDialog::OnClose();
 }
