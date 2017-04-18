@@ -9,6 +9,7 @@
 #include "Winnetwk.h"
 #include "c_socket.h"
 #include "cmd_process.h"
+#include "UidDlg.h"
 #include <iostream>
 #include <WinSock2.h>  
 #include <Windows.h>  
@@ -185,6 +186,8 @@ BOOL CIPSearchDlg::OnInitDialog()
 	font.Detach();
 	m_listInfo.SetWindowBKColor(RGB(0,0,0));
 
+	//播放设置
+	m_cAVPlayer.SetHWND(GetDlgItem(IDC_STATIC_VIDEO)->GetSafeHwnd());   // 设置播放器的窗口句柄
 	//加载config.ini
 	TCHAR MyexeFullPath[MAX_PATH] = TEXT("C:\\");
 	if(GetModuleFileName(NULL,MyexeFullPath,MAX_PATH)) {
@@ -195,6 +198,10 @@ BOOL CIPSearchDlg::OnInitDialog()
 		}
 	}
 	m_Configs.LoadToolSetting((LPCTSTR)(m_strModulePath+ TEXT("config.ini")));
+	if (m_Configs.strLogPath.empty())
+	{
+		m_Configs.strLogPath=m_strModulePath + _T("Log\\");
+	}
 
 	if(m_Configs.nLogLevel != DLEVEL_NONE ) {
 		CLogger::DEBUG_LEVEL level = m_Configs.nLogLevel == DLEVEL_DEBUG?CLogger::DEBUG_ALL:
@@ -278,6 +285,7 @@ void CIPSearchDlg::AddPrompt(CString strPrompt,BOOL bError,INT iColor)
 	LDEGMSGW((CLogger::DEBUG_INFO, TEXT("Info:%s"),(LPCTSTR)strPrompt));
 	GetLocalTime( &curTime );
 	strTime.Format(_T("%02d:%02d:%02d %03d\t"),curTime.wHour,curTime.wMinute,curTime.wSecond,curTime.wMilliseconds);
+	//strTime.Format(_T("%02d:%02d:%02d  "),curTime.wHour,curTime.wMinute,curTime.wSecond);
 	strPrompt   = strTime + strPrompt;
 	pLine       = new STRUCT_LIST_LINE;
 	if (!pLine) {
@@ -575,6 +583,7 @@ void CIPSearchDlg::OnBnClickedButtonTest()
 		//	m_pRecvThread = NULL;
 		//}
 		this->SetDlgItemText(IDC_BUTTON_TEST,_T("开始测试"));
+		GetDlgItem(ID_BTN_APPLY)->EnableWindow(TRUE);
 		AddPrompt(_T("用户取消"),TRUE);
 	}
 	else
@@ -582,6 +591,7 @@ void CIPSearchDlg::OnBnClickedButtonTest()
 		if (OnStartTest())
 		{
 			this->SetDlgItemText(IDC_BUTTON_TEST,_T("停止"));
+			GetDlgItem(ID_BTN_APPLY)->EnableWindow(FALSE);
 		}
 	}
 
@@ -632,31 +642,7 @@ void CIPSearchDlg::RtspPlay()
 	};
 	CString strUrl;
 	strUrl.Format(_T("rtsp://%s/webcam"),m_strIp);
-
-	if (strUrl.IsEmpty())
-	{
-		AfxMessageBox(_T("please fix path of url !"));
-		return;
-	}
-	if (m_vlcInst == NULL)  
-	{  
-		m_vlcInst = libvlc_new(sizeof(vlc_args)/sizeof(vlc_args[0]), vlc_args);  
-	}  
-	if (m_vlcMedia == NULL)  
-	{  
-		//  "rtsp://127.0.0.1:1234/vedio"  
-		m_vlcMedia = libvlc_media_new_location(m_vlcInst,wstr2str((LPCTSTR)strUrl).c_str());
-
-	}  
-	if (m_vlcMplay == NULL)  
-	{  
-		m_vlcMplay = libvlc_media_player_new_from_media(m_vlcMedia);  
-	}  
-
-	HWND hWndVedio = GetDlgItem(IDC_LIST_INFO)->GetSafeHwnd();
-	//HWND hWndVedio = GetDlgItem(IDC_LIST_VIDEO)->GetSafeHwnd();
-	libvlc_media_player_set_hwnd(m_vlcMplay, hWndVedio);  
-	libvlc_media_player_play(m_vlcMplay);
+	m_cAVPlayer.Play(wstr2str((LPCTSTR)strUrl));
 }
 void CIPSearchDlg::OnBnClickedBtnApply()
 {
@@ -695,7 +681,7 @@ BOOL CIPSearchDlg::TestProc()
 		PostMessage(WM_UPDATE_MSG,UPDATE_LIST,LIST_EMPTY);
 	}
 	CLogger::DEBUG_LEVEL level = CLogger::DEBUG_ALL;
-	logger = CLogger::StartLog((m_Configs.strLogPath + TEXT("\\") + CLogger::TimeStr(true, true)).c_str(), level);    
+	logger = CLogger::StartLog((m_Configs.strLogPath + CLogger::TimeStr(true, true)).c_str(), level);    
 	if(logger) m_DevTest.StartLog(logger);
 	//1.连接设备
 	strPrompt.Format(_T("连接设备(%s)..."),m_strIp);
@@ -705,7 +691,7 @@ BOOL CIPSearchDlg::TestProc()
 	{
 		strPrompt.Format(_T("连接设备失败，错误码:%d"),ret);
 		AddPrompt(strPrompt,TRUE);
-		//AfxMessageBox(_T("连接设备失败，错误码:%d"));
+
 		return FALSE;
 	}
 	strPrompt.Format(_T("连接设备成功"));
@@ -745,7 +731,7 @@ BOOL CIPSearchDlg::TestProc()
 	//AddPrompt(strPrompt);
 
 	//打开rtsp流
-	//RtspPlay();
+	RtspPlay();
 
 	//3.创建接收设备端的消息的线程，专门用于接收设备端消息
 	//m_pRecvThread = AfxBeginThread(RecvDeviceThread,this);
@@ -1099,6 +1085,7 @@ void CIPSearchDlg::OnBnClickedButtonPass()
 	int i;
 	CString strPrompt;
 	std::string strOutput;
+	CUidDlg uiddlg;
 	//1.获取当前测试项，保存测试结果，设置测试状态为已测试
 	for (i=0;i<m_TestCaseList.size();i++)
 	{
@@ -1160,13 +1147,22 @@ void CIPSearchDlg::OnBnClickedButtonPass()
 			}
 		}
 	}
-	if (i==m_TestCaseList.size()&&m_bTestPass)
+	if (i==m_TestCaseList.size())
 	{
 		//所有测试项都测试完成,写号
 		std::string strWriteMsg;
+		CString strtmp;
+		strWriteMsg = "UID:1234567890";
 		strPrompt.Format(_T("测试完成"));
 		AddPrompt(strPrompt);
-		m_DevTest.WriteUidAndLanMac(m_TestSocket,wstr2str(m_Configs.strWriteName),strWriteMsg);
+		if (m_Configs.bWriteUid)
+		{
+			if (IDOK == uiddlg.DoModal())
+			{
+				strtmp.Format(_T("UID:%s,LANMAC:%s"),uiddlg.strUid,uiddlg.strLanmac);
+				m_DevTest.WriteUidAndLanMac(m_TestSocket,wstr2str(m_Configs.strWriteName),wstr2str((LPCTSTR)strtmp));
+			}
+		}
 	}
 }
 

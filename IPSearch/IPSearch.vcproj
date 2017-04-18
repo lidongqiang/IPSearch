@@ -189,6 +189,10 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
+				RelativePath=".\AVPlayer.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\BitConfigDlg.cpp"
 				>
 			</File>
@@ -245,6 +249,10 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath=".\UidDlg.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\VideoDlg.cpp"
 				>
 			</File>
@@ -254,6 +262,10 @@
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
+			<File
+				RelativePath=".\AVPlayer.h"
+				>
+			</File>
 			<File
 				RelativePath=".\BitConfigDlg.h"
 				>
@@ -296,6 +308,10 @@
 			</File>
 			<File
 				RelativePath=".\targetver.h"
+				>
+			</File>
+			<File
+				RelativePath=".\UidDlg.h"
 				>
 			</File>
 			<File

@@ -16,6 +16,7 @@
 #define IDD_BITCONFIG_DIALOG            132
 #define IDD_PLAYER_DIALOG               133
 #define IDD_VIDEO_DIALOG                133
+#define IDD_UID_DIALOG                  134
 #define ID_BTN_SERCH                    1001
 #define IDC_LIST_DEVICE                 1002
 #define IDC_EDIT_IP                     1003
@@ -63,6 +64,7 @@
 #define IDC_BUTTON_PASS                 1043
 #define IDC_EDIT4                       1044
 #define IDC_BUTTON_FAIL                 1044
+#define IDC_EDIT_MAC                    1044
 #define IDC_EDIT5                       1045
 #define IDC_EDIT6                       1046
 #define IDC_EDIT7                       1047
@@ -78,9 +80,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        134
+#define _APS_NEXT_RESOURCE_VALUE        135
 #define _APS_NEXT_COMMAND_VALUE         32771
-#define _APS_NEXT_CONTROL_VALUE         1044
+#define _APS_NEXT_CONTROL_VALUE         1045
 #define _APS_NEXT_SYMED_VALUE           108
 #endif
 #endif

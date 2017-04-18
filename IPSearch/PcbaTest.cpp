@@ -216,7 +216,7 @@ int CPcbaTest::CommitResult(SOCKET TestSocket,std::string TestName)
 
 int CPcbaTest::WriteUidAndLanMac(SOCKET TestSocket,std::string TestName,std::string strWriteMsg)
 {
-	std::string strMsg,strSta,strRes,strTestItem,strResult;
+	std::string strMsg,strSta,strRes,strTestItem,strResult,strErrCode;
 	int ret,nErrCode;
 	int n=5;
 
@@ -241,14 +241,14 @@ int CPcbaTest::WriteUidAndLanMac(SOCKET TestSocket,std::string TestName,std::str
 		return -2;
 	}
 	m_Json.JsontoItem("RES",strRes,"STATUS",strSta,"TEST_ITEM",strTestItem,strMsg);
-	m_Json.JsontoInt("ERR_CODE",nErrCode,strMsg);
+	m_Json.JsontoItem("ERR_CODE",strErrCode,strMsg);
 	if (stringCompareIgnoreCase(strRes,"START")||stringCompareIgnoreCase(strTestItem,TestName))
 	{
 		return -3;
 	}
 	if (!stringCompareIgnoreCase(strSta,"NAK"))
 	{
-		return nErrCode;
+		return -atoi(strErrCode.c_str());
 	}
 	while(n--)
 	{
@@ -271,14 +271,14 @@ int CPcbaTest::WriteUidAndLanMac(SOCKET TestSocket,std::string TestName,std::str
 			return -5;
 		}
 		m_Json.JsontoItem("RES",strRes,"STATUS",strSta,"TEST_ITEM",strTestItem,"RESULT",strResult,strMsg);
-		m_Json.JsontoInt("ERR_CODE",nErrCode,strMsg);
+		m_Json.JsontoItem("ERR_CODE",strErrCode,strMsg);
 		if (stringCompareIgnoreCase(strRes,"START")||stringCompareIgnoreCase(strTestItem,TestName))
 		{
 			return -6;
 		}
 		if (!stringCompareIgnoreCase(strSta,"NAK")||!stringCompareIgnoreCase(strResult,"FAIL"))
 		{
-			return nErrCode;
+			return -atoi(strErrCode.c_str());
 		}
 		if (!stringCompareIgnoreCase(strResult,"PASS"))
 		{

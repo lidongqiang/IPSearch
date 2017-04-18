@@ -12,6 +12,7 @@
 #include "XListBox/XListBox.h"
 #include "debug.h"
 #include "PcbaTest .h"
+#include "AVPlayer.h"
 
 typedef struct  
 {
@@ -49,6 +50,8 @@ protected:
 	afx_msg void OnPaint();
 	afx_msg HCURSOR OnQueryDragIcon();
 	DECLARE_MESSAGE_MAP()
+private:
+	CAVPlayer   m_cAVPlayer;        // ²¥·ÅÆ÷Àà
 public:
 	CIniSettingBase m_Configs;
 	CIniLocalLan	m_LocalLan;

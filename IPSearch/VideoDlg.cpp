@@ -75,7 +75,9 @@ void CVideoDlg::OnBnClickedBtnPlay()
 		"--rtsp-caching=300",  
 		"--network-caching=500",  
 		"--rtsp-tcp",  
-	};
+		//"--verbose=2",  
+		//"--extraintf=logger"  
+	};  
 	CString strUrl = _T("");
 	//char *strUrl ;
 	this->GetDlgItemText(IDC_EDIT_URL,strUrl);
@@ -91,7 +93,8 @@ void CVideoDlg::OnBnClickedBtnPlay()
 	if (m_vlcMedia == NULL)  
 	{  
 		//  "rtsp://127.0.0.1:1234/vedio"  
-		m_vlcMedia = libvlc_media_new_location(m_vlcInst,wstr2str((LPCTSTR)strUrl).c_str());
+		//m_vlcMedia = libvlc_media_new_location(m_vlcInst,wstr2str((LPCTSTR)strUrl).c_str());
+		m_vlcMedia = libvlc_media_new_location(m_vlcInst,"rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k.mov");
 
 	}  
 	if (m_vlcMplay == NULL)  
@@ -103,6 +106,23 @@ void CVideoDlg::OnBnClickedBtnPlay()
 	//HWND hWndVedio = GetDlgItem(IDC_LIST_VIDEO)->GetSafeHwnd();
 	libvlc_media_player_set_hwnd(m_vlcMplay, hWndVedio);  
 	libvlc_media_player_play(m_vlcMplay);
+	Sleep(10000);
+
+	if (m_vlcMplay != NULL)  
+	{  
+		libvlc_media_player_release(m_vlcMplay);  
+		m_vlcMplay = NULL;  
+	}  
+	if (m_vlcMedia != NULL)  
+	{  
+		libvlc_media_release(m_vlcMedia);  
+		m_vlcMedia = NULL;  
+	}  
+	if (m_vlcInst != NULL)  
+	{  
+		libvlc_release(m_vlcInst);  
+		m_vlcInst = NULL;  
+	}  
 }
 
 BOOL CVideoDlg::OnInitDialog()
