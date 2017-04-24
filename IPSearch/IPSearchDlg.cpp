@@ -9,6 +9,7 @@
 #include "Winnetwk.h"
 #include "c_socket.h"
 #include "cmd_process.h"
+#include "cmFile.h"
 #include "UidDlg.h"
 #include <iostream>
 #include <WinSock2.h>  
@@ -188,16 +189,18 @@ BOOL CIPSearchDlg::OnInitDialog()
 
 	//播放设置
 	m_cAVPlayer.SetHWND(GetDlgItem(IDC_STATIC_VIDEO)->GetSafeHwnd());   // 设置播放器的窗口句柄
+	CRect rtTop;  
+	CStatic *pWnd = (CStatic*)GetDlgItem(IDC_STATIC_VIDEO);  
+	CDC *cDc = pWnd->GetDC();  
+	pWnd->GetClientRect(&rtTop);  
+	cDc->FillSolidRect(rtTop.left, rtTop.top, rtTop.Width(), rtTop.Height(),RGB(0,0,0));  
+	Invalidate(FALSE);  
 	//加载config.ini
-	TCHAR MyexeFullPath[MAX_PATH] = TEXT("C:\\");
-	if(GetModuleFileName(NULL,MyexeFullPath,MAX_PATH)) {
-		TCHAR *pos = _tcsrchr(MyexeFullPath, TEXT('\\'));
-		if(pos) {
-			pos[1] = 0;
-			m_strModulePath = MyexeFullPath;
-		}
+	if (!LoadConfig())
+	{
+		MessageBox(_T("Loading config file failed!"),_T("ERROR"),MB_ICONERROR|MB_OK);
+		exit(-1);
 	}
-	m_Configs.LoadToolSetting((LPCTSTR)(m_strModulePath+ TEXT("config.ini")));
 	if (m_Configs.strLogPath.empty())
 	{
 		m_Configs.strLogPath=m_strModulePath + _T("Log\\");
@@ -285,7 +288,6 @@ void CIPSearchDlg::AddPrompt(CString strPrompt,BOOL bError,INT iColor)
 	LDEGMSGW((CLogger::DEBUG_INFO, TEXT("Info:%s"),(LPCTSTR)strPrompt));
 	GetLocalTime( &curTime );
 	strTime.Format(_T("%02d:%02d:%02d %03d\t"),curTime.wHour,curTime.wMinute,curTime.wSecond,curTime.wMilliseconds);
-	//strTime.Format(_T("%02d:%02d:%02d  "),curTime.wHour,curTime.wMinute,curTime.wSecond);
 	strPrompt   = strTime + strPrompt;
 	pLine       = new STRUCT_LIST_LINE;
 	if (!pLine) {
@@ -360,7 +362,6 @@ void CIPSearchDlg::OnBnClickedBtnSerch()
 {
 	// TODO: Add your control notification handler code here
 
-	//CString strUid,strAddr,strDevname;
 	std::string strUid,strAddr,strDevname;
 	m_listDevice.DeleteAllItems();
 
@@ -368,13 +369,11 @@ void CIPSearchDlg::OnBnClickedBtnSerch()
 	WSADATA wsaData;  
 	if(0 != WSAStartup(wVersionRequested, &wsaData))  
 	{  
-		//printf("WSAStartup failed with error: %d/n", GetLastError());
 		AfxMessageBox(_T("WSAStartup failed with error: %d/n"), GetLastError());
 		return ;  
 	}  
 	if(2 != HIBYTE(wsaData.wVersion) || 2 != LOBYTE(wsaData.wVersion))  
 	{  
-		//printf("Socket version not supported./n");
 		AfxMessageBox(_T("Socket version not supported./n"));
 		WSACleanup();  
 		return ;  
@@ -382,7 +381,6 @@ void CIPSearchDlg::OnBnClickedBtnSerch()
 	SOCKET sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);  
 	if(INVALID_SOCKET == sock)  
 	{  
-		//printf("socket failed with error: %d/n", WSAGetLastError());
 		AfxMessageBox(_T("socket failed with error: %d/n"), GetLastError());
 		WSACleanup();  
 		return ;  
@@ -417,7 +415,6 @@ void CIPSearchDlg::OnBnClickedBtnSerch()
 	int nIndex = 0;
 	if(SOCKET_ERROR == sendto(sock, buf, sizeof(buf), 0, (LPSOCKADDR)&addr, sizeof(addr)))  
 	{  
-		//printf("sendto failed with error: %d/n", WSAGetLastError());  
 		AfxMessageBox(_T("sendto failed with error: %d\n"));
 	}
 	while(1)  
@@ -429,14 +426,7 @@ void CIPSearchDlg::OnBnClickedBtnSerch()
 		}
 		if (strlen(szBuf) != 0)
 		{
-			//{"UID" : "123423434424","IP" : "172.16.14.85","DEVNAME" : "IPC"}
-			//ParseDevInfo("{\"UID\" : \"123423434424\",\"IP\" : \"172.16.14.85\",\"DEVNAME\" : \"IPC\"}",strUid,strAddr,strDevname);
-			//ParseDevInfo(szBuf,strUid,strAddr,strDevname);
 			m_Json.JsontoItem("UID",strUid,"IP",strAddr,"DEVICENAME",strDevname,szBuf);
-			//m_listDevice.InsertItem(nIndex,_T(""));
-			//m_listDevice.SetItemText(nIndex,0,strUid);
-			//m_listDevice.SetItemText(nIndex,1,strAddr);
-			//m_listDevice.SetItemText(nIndex,2,strDevname);
 			m_listDevice.InsertItem(nIndex,_T(""));
 			m_listDevice.SetItemText(nIndex,0,str2wstr(strUid).c_str());
 			m_listDevice.SetItemText(nIndex,1,str2wstr(strAddr).c_str());
@@ -546,20 +536,20 @@ bool CIPSearchDlg::OnStartTest()
 
 	if (m_listSelect != -1)
 	{
+		initTestCase();
+		if (m_TestCaseList.size()==0&&!m_Configs.bWriteMac&&!m_Configs.bWriteUid)
+		{
+			strPromt.Format(GetLocalString(_T("IDS_ERROR_NO_TEST")).c_str());
+			goto OnStartTestExit;
+		}
 		m_pTestThread = AfxBeginThread(TestDeviceThread,this);
 		if(NULL == m_pTestThread) {
 			goto OnStartTestExit; /*generrally never to here **/
 		}
-		////创建接收设备端的消息的线程，专门用于接收设备端消息
-		//m_pRecvThread = AfxBeginThread(RecvDeviceThread,this);
-		//if(NULL == m_pRecvThread) {
-		//	goto OnStartTestExit; /*generrally never to here **/
-		//}
-		//TestProc();
 	}
 	else
 	{
-		AfxMessageBox(_T("请选择一个ip地址"));
+		strPromt.Format(GetLocalString(_T("IDS_ERROR_NO_DEVICE")).c_str());
 		goto OnStartTestExit; /*generrally never to here **/
 	}
 	return TRUE;
@@ -574,23 +564,20 @@ void CIPSearchDlg::OnBnClickedButtonTest()
 	// TODO: Add your control notification handler code here
 	if (m_bRun)
 	{
-		this->SetDlgItemText(IDC_BUTTON_TEST,_T("停止中"));
+		this->SetDlgItemText(IDC_BUTTON_TEST,GetLocalString(_T("IDS_TEXT_STOPING_BUTTON")).c_str());
 		m_bRun = false;
 		closesocket(m_TestSocket);
-		//if(m_pRecvThread!=NULL)
-		//{
-		//	WaitForSingleObject(m_pRecvThread->m_hThread,INFINITE);
-		//	m_pRecvThread = NULL;
-		//}
-		this->SetDlgItemText(IDC_BUTTON_TEST,_T("开始测试"));
+
+		m_cAVPlayer.Stop();
+		this->SetDlgItemText(IDC_BUTTON_TEST,GetLocalString(_T("START")).c_str());
 		GetDlgItem(ID_BTN_APPLY)->EnableWindow(TRUE);
-		AddPrompt(_T("用户取消"),TRUE);
+		AddPrompt(GetLocalString(_T("IDS_INFO_USER_ABORT")).c_str(),TRUE);
 	}
 	else
 	{
 		if (OnStartTest())
 		{
-			this->SetDlgItemText(IDC_BUTTON_TEST,_T("停止"));
+			this->SetDlgItemText(IDC_BUTTON_TEST,GetLocalString(_T("IDS_TEXT_STOP_BUTTON")).c_str());
 			GetDlgItem(ID_BTN_APPLY)->EnableWindow(FALSE);
 		}
 	}
@@ -647,20 +634,10 @@ void CIPSearchDlg::RtspPlay()
 void CIPSearchDlg::OnBnClickedBtnApply()
 {
 	// TODO: Add your control notification handler code here
-	//CString strUid,strIP,strDevname;
-
-	//this->GetDlgItemText(IDC_EDIT_UID,strUid);
-	//this->GetDlgItemText(IDC_EDIT_IP,strIP);
-	//this->GetDlgItemText(IDC_EDIT_DEVNAME,strDevname);
-
-	//m_listDevice.SetItemText(m_listSelect,0,strUid);
-	//m_listDevice.SetItemText(m_listSelect,1,strIP);
-	//m_listDevice.SetItemText(m_listSelect,2,strDevname);
-	CConfigDlg ConfgDlg(m_Configs);
+	CConfigDlg ConfgDlg(m_Configs,m_LocalLan);
 	if (IDOK == ConfgDlg.DoModal())
 	{
 		m_Configs.SaveToolSetting(std::wstring(TEXT("")));
-		//AfxMessageBox(_T("保存配置成功！"));
 	}
 
 }
@@ -672,6 +649,7 @@ BOOL CIPSearchDlg::TestProc()
 	int nSdCardTest=-1;
 	int nWifiTest=-1;
 	std::string strMsg,strSta,strOutput;
+	bool bQuery = true;
 	//int nErrCode;
 	CString strPrompt;
 	CLogger         *logger = NULL;
@@ -684,17 +662,16 @@ BOOL CIPSearchDlg::TestProc()
 	logger = CLogger::StartLog((m_Configs.strLogPath + CLogger::TimeStr(true, true)).c_str(), level);    
 	if(logger) m_DevTest.StartLog(logger);
 	//1.连接设备
-	strPrompt.Format(_T("连接设备(%s)..."),m_strIp);
+	strPrompt.Format(GetLocalString(_T("IDS_INFO_CONN_DEVICE")).c_str(),m_strIp);
 	AddPrompt(strPrompt);
 	ret = connect_dev();
 	if (ret<0)
 	{
-		strPrompt.Format(_T("连接设备失败，错误码:%d"),ret);
+		strPrompt.Format(GetLocalString(_T("IDS_ERROR_CONN_FAIL")).c_str(),ret);
 		AddPrompt(strPrompt,TRUE);
-
 		return FALSE;
 	}
-	strPrompt.Format(_T("连接设备成功"));
+	strPrompt.Format(GetLocalString(_T("IDS_INFO_CONN_PASS")).c_str());
 	AddPrompt(strPrompt);
 
 	//strPrompt.Format(_T("进入测试模式..."));
@@ -736,130 +713,86 @@ BOOL CIPSearchDlg::TestProc()
 	//3.创建接收设备端的消息的线程，专门用于接收设备端消息
 	//m_pRecvThread = AfxBeginThread(RecvDeviceThread,this);
 
-
+	if (m_TestCaseList.size()==0)
+	{
+		WritePara();
+	}
 	//4.下载测试程序，发送开始测试命令，{"TYPE":"CMD", "TEST_ITEM":"KEY-TEST", "CMD":"START" }
-	//SD卡测试
-	if (m_Configs.bSdcardTest)
-	{
-		strPrompt.Format(_T("开始SD卡测试..."));
-		AddPrompt(strPrompt);
-		ret = m_DevTest.StartTestItem(m_TestSocket,wstr2str(m_Configs.strSdcardName));
-		if (ret<0)
-		{
-			strPrompt.Format(_T("SD卡测试失败，错误码(%d)"),ret);
-			AddPrompt(strPrompt,TRUE);
-		}
-		else
-		{
-			nSdCardTest=0;
-		}
-	}
-	if (m_Configs.bWifiTest)
-	{
-		strPrompt.Format(_T("开始Wifi测试..."));
-		AddPrompt(strPrompt);
-		ret = m_DevTest.StartTestItem(m_TestSocket,wstr2str(m_Configs.strWifiName));
-		if (ret<0)
-		{
-			strPrompt.Format(_T("Wifi测试失败，错误码(%d)"),ret);
-			AddPrompt(strPrompt,TRUE);
-		}
-		else
-		{
-			nWifiTest = 0;
-		}
-	}
-
-	initTestCase();
 	for (i=0;i<m_TestCaseList.size();i++)
 	{
 		if (m_TestCaseList[i].nTestStatus == 0)
 		{
-			strPrompt.Format(_T("%s开始测试..."),m_TestCaseList[i].TestName.c_str());
+			strPrompt.Format(_T("%s:%s"),GetLocalString(m_TestCaseList[i].TestName).c_str(),GetLocalString(_T("IDS_TESTING")).c_str());
 			AddPrompt(strPrompt);
 			m_TestCaseList[i].nTestStatus = 1;
-			ret = m_DevTest.StartTestItem(m_TestSocket,wstr2str(m_TestCaseList[i].TestName));
-			if (ret<0)
-			{
-				strPrompt.Format(_T("%s开始测试失败,错误码(%d)"),m_TestCaseList[i].TestName.c_str(),ret);
-				AddPrompt(strPrompt,TRUE);
-			}
 			if (m_TestCaseList[i].TestName.compare(m_Configs.strKeyName)==0)
 			{
-				while(m_TestCaseList[i].nTestStatus==1)
+				ret = m_DevTest.KeyTest(m_TestSocket,wstr2str(m_Configs.strKeyName),strOutput);
+				if (ret<0)
 				{
-					ret = m_DevTest.QueryTestItem(m_TestSocket,wstr2str(m_Configs.strKeyName),strOutput);
-					if (ret < 0)
-					{
-						//m_TestCaseList[i].nTestStatus = -1;
-						strPrompt.Format(_T("%s测试失败,错误码(%d)"),m_TestCaseList[i].TestName.c_str(),ret);
-						AddPrompt(strPrompt,TRUE);
-						break;
-					}
-					else if (ret == 2)
-					{
-						strPrompt.Format(_T("%s测试:%s按键按下"),m_TestCaseList[i].TestName.c_str(),str2wstr(strOutput).c_str());
-						AddPrompt(strPrompt,TRUE);
-						break;
-					}
-					Sleep(1000);
+					//strPrompt.Format(_T("%s测试失败,错误码(%d)"),m_TestCaseList[i].TestName.c_str(),ret);
+					strPrompt.Format(GetLocalString(_T("FAILED")).c_str(),GetLocalString(m_TestCaseList[i].TestName).c_str(),ret);
+					AddPrompt(strPrompt,True);
+					break;
+				}
+				else if (ret == 2)
+				{
+					//strPrompt.Format(_T("%s测试:%s按键按下"),m_TestCaseList[i].TestName.c_str(),str2wstr(strOutput).c_str());
+					strPrompt.Format(GetLocalString(_T("IDS_KEY_DOWN")).c_str(),str2wstr(strOutput).c_str());
+					AddPrompt(strPrompt);
 				}
 			}
-			break;
+			else
+			{
+				ret = m_DevTest.StartTestItem(m_TestSocket,wstr2str(m_TestCaseList[i].TestName));
+				if (ret<0)
+				{
+					m_TestCaseList[i].nTestStatus = -1;
+					strPrompt.Format(GetLocalString(_T("FAILED")).c_str(),GetLocalString(m_TestCaseList[i].TestName).c_str(),ret);
+					AddPrompt(strPrompt,TRUE);
+				}
+			}
+			//所有自动测试项完，第一个人工测试项
+			if (!m_TestCaseList[i].bAuto)
+			{
+					break;
+			}
 		}
 	}
-	while ((nSdCardTest==0)||(nWifiTest==0))
+	while(bQuery)
 	{
-		if (nSdCardTest==0)		//测试中
+		bQuery = false;
+		for (i=0;i<m_TestCaseList.size();i++)
 		{
-			ret = m_DevTest.QueryTestItem(m_TestSocket,wstr2str(m_Configs.strSdcardName),strOutput);
-			if (ret==1)
+			if (m_TestCaseList[i].nTestStatus == 1 &&m_TestCaseList[i].bAuto)
 			{
-				ret = m_DevTest.CommitResult(m_TestSocket,wstr2str(m_Configs.strSdcardName));
-				if (ret<0)
+				bQuery = true;
+				ret = m_DevTest.QueryTestItem(m_TestSocket,wstr2str(m_TestCaseList[i].TestName),strOutput);
+				if (ret == 1)
 				{
-					strPrompt.Format(_T("%s测试失败,错误码(%d)"),m_Configs.strSdcardName.c_str(),ret);
+					ret = m_DevTest.StopTestItem(m_TestSocket,wstr2str(m_Configs.strSdcardName));
+					if (ret<0)
+					{
+						m_TestCaseList[i].nTestStatus = -1;
+						strPrompt.Format(GetLocalString(_T("IDS_STOP_TEST_FAIL")).c_str(),GetLocalString(m_TestCaseList[i].TestName).c_str(),ret);
+						AddPrompt(strPrompt,TRUE);
+					}
+					else
+					{
+						m_TestCaseList[i].nTestStatus = 2;
+						strPrompt.Format(GetLocalString(_T("SUCCESS")).c_str(),GetLocalString(m_TestCaseList[i].TestName).c_str());
+						AddPrompt(strPrompt);
+					}
+				}
+				else if (ret < 0)
+				{
+					strPrompt.Format(GetLocalString(_T("FAILED")).c_str(),GetLocalString(m_TestCaseList[i].TestName).c_str(),ret);
 					AddPrompt(strPrompt,TRUE);
+					m_TestCaseList[i].nTestStatus = -1;
 				}
-				else
-				{
-					strPrompt.Format(_T("%s测试成功"),m_Configs.strSdcardName.c_str());
-					AddPrompt(strPrompt);
-				}
-				nSdCardTest=1;
-			}else if (ret<0)
-			{
-				strPrompt.Format(_T("%s测试失败,错误码(%d)"),m_Configs.strSdcardName.c_str(),ret);
-				AddPrompt(strPrompt,TRUE);
-				nSdCardTest=1;
 			}
 		}
-
-		if (nWifiTest==0)		//测试中
-		{
-			ret = m_DevTest.QueryTestItem(m_TestSocket,wstr2str(m_Configs.strWifiName),strOutput);
-			if (ret==1)
-			{
-				ret = m_DevTest.CommitResult(m_TestSocket,wstr2str(m_Configs.strWifiName));
-				if (ret<0)
-				{
-					strPrompt.Format(_T("%s测试失败,错误码(%d)"),m_Configs.strWifiName.c_str(),ret);
-					AddPrompt(strPrompt,TRUE);
-				}
-				else
-				{
-					strPrompt.Format(_T("%s测试成功"),m_Configs.strWifiName.c_str());
-					AddPrompt(strPrompt);
-				}
-				nWifiTest=1;
-			}else if (ret<0)
-			{
-				strPrompt.Format(_T("%s测试失败,错误码(%d)"),m_Configs.strWifiName.c_str(),ret);
-				AddPrompt(strPrompt,TRUE);
-				nWifiTest=1;
-			}
-		}
-		Sleep(1000);
+		Sleep(200);
 	}
     m_pTestThread = NULL;
 	return TRUE;
@@ -941,37 +874,62 @@ void CIPSearchDlg::initTestCase()
 {
 	STRUCT_TEST_CASE TestCase;
 	m_TestCaseList.clear();
-	if (m_Configs.bIrcutTest)
+	if (m_Configs.bSdcardTest)
 	{
-		TestCase.TestName = m_Configs.strIrcutName;
+		TestCase.TestName = m_Configs.strSdcardName;
+		TestCase.bAuto = true;
 		TestCase.nTestStatus = 0;
 		m_TestCaseList.push_back(TestCase);
 	}
-	if (m_Configs.bMonitorTest)
+	if (m_Configs.bWifiTest)
 	{
-		TestCase.TestName = m_Configs.strMonitorName;
-		TestCase.nTestStatus = 0;
-		m_TestCaseList.push_back(TestCase);
-	}
-	if (m_Configs.bInterphoneTest)
-	{
-		TestCase.TestName = m_Configs.strInterphoneName;
-		TestCase.nTestStatus = 0;
-		m_TestCaseList.push_back(TestCase);
-	}
-	if (m_Configs.bPtzTest)
-	{
-		TestCase.TestName = m_Configs.strPtzName;
+		TestCase.TestName = m_Configs.strWifiName;
+		TestCase.bAuto = true;
 		TestCase.nTestStatus = 0;
 		m_TestCaseList.push_back(TestCase);
 	}
 	if (m_Configs.bKeyTest)
 	{
 		TestCase.TestName = m_Configs.strKeyName;
+		TestCase.bAuto = false;
 		TestCase.nTestStatus = 0;
 		m_TestCaseList.push_back(TestCase);
 	}
-
+	if (m_Configs.bLedTest)
+	{
+		TestCase.TestName = m_Configs.strLedName;
+		TestCase.bAuto = false;
+		TestCase.nTestStatus = 0;
+		m_TestCaseList.push_back(TestCase);
+	}
+	if (m_Configs.bIrcutTest)
+	{
+		TestCase.TestName = m_Configs.strIrcutName;
+		TestCase.bAuto = false;
+		TestCase.nTestStatus = 0;
+		m_TestCaseList.push_back(TestCase);
+	}
+	if (m_Configs.bMonitorTest)
+	{
+		TestCase.TestName = m_Configs.strMonitorName;
+		TestCase.bAuto = false;
+		TestCase.nTestStatus = 0;
+		m_TestCaseList.push_back(TestCase);
+	}
+	if (m_Configs.bInterphoneTest)
+	{
+		TestCase.TestName = m_Configs.strInterphoneName;
+		TestCase.bAuto = false;
+		TestCase.nTestStatus = 0;
+		m_TestCaseList.push_back(TestCase);
+	}
+	if (m_Configs.bPtzTest)
+	{
+		TestCase.TestName = m_Configs.strPtzName;
+		TestCase.bAuto = false;
+		TestCase.nTestStatus = 0;
+		m_TestCaseList.push_back(TestCase);
+	}
 }
 BOOL CIPSearchDlg::RecvProc()
 {
@@ -1035,8 +993,6 @@ BOOL CIPSearchDlg::RecvProc()
 void CIPSearchDlg::OnBnClickedBtnPlayer()
 {
 	// TODO: Add your control notification handler code here
-	//CPlayerDlg playDlg;
-	//playDlg,DoModal();
 	CString strUrl;
 	if (m_strIp.IsEmpty())
 	{
@@ -1062,12 +1018,6 @@ void CIPSearchDlg::OnBnClickedButtonNext()
 	if (m_listSelect>0&&m_listSelect<nCount)
 	{
 		m_bRun = false;
-		if(m_pRecvThread!=NULL)
-		{
-			WaitForSingleObject(m_pRecvThread->m_hThread,INFINITE);
-			closesocket(m_TestSocket);
-			m_pRecvThread = NULL;
-		}
 		m_strIp = m_listDevice.GetItemText(m_listSelect, 1);
 		TestProc();
 	}
@@ -1078,90 +1028,133 @@ void CIPSearchDlg::OnBnClickedButtonNext()
 
 }
 
+void CIPSearchDlg::WritePara()
+{
+	CUidDlg uiddlg;
+	CString strPrompt;
+	CString strTmp;
+	int nRet;
+	if (m_Configs.bWriteUid||m_Configs.bWriteMac)
+	{
+		if (IDOK == uiddlg.DoModal())
+		{
+			if (m_Configs.bWriteUid)
+			{
+				strPrompt.Format(_T("烧写UID.."));
+				AddPrompt(strPrompt);
+				strTmp.Format(_T("UID:%s"),uiddlg.strUid);
+				nRet = m_DevTest.WriteUidAndLanMac(m_TestSocket,wstr2str(m_Configs.strWriteName),wstr2str((LPCTSTR)strTmp));
+				if (nRet<0)
+				{
+					strPrompt.Format(_T("烧写UID失败,错误码(%d)"),nRet);
+					AddPrompt(strPrompt,TRUE);
+				}
+				else
+				{
+					strPrompt.Format(_T("烧写UID成功"));
+					AddPrompt(strPrompt,TRUE);
+				}
+			}
+			if (m_Configs.bWriteMac)
+			{
+				strPrompt.Format(_T("烧写LanMac.."));
+				AddPrompt(strPrompt);
+				strTmp.Format(_T("LANMAC:%s"),uiddlg.strLanmac);
+				m_DevTest.WriteUidAndLanMac(m_TestSocket,wstr2str(m_Configs.strWriteName),wstr2str((LPCTSTR)strTmp));
+				if (nRet<0)
+				{
+					strPrompt.Format(_T("烧写LanMac失败,错误码(%d)"),nRet);
+					AddPrompt(strPrompt,TRUE);
+				}
+				else
+				{
+					strPrompt.Format(_T("烧写LanMac成功"));
+					AddPrompt(strPrompt);
+				}
+			}
+		}
+	}
+}
+
 void CIPSearchDlg::OnBnClickedButtonPass()
 {
 	// TODO: Add your control notification handler code here
 	int ret;
 	int i;
+	int nConut=0;
 	CString strPrompt;
 	std::string strOutput;
-	CUidDlg uiddlg;
+
+	nConut = m_TestCaseList.size();
 	//1.获取当前测试项，保存测试结果，设置测试状态为已测试
 	for (i=0;i<m_TestCaseList.size();i++)
 	{
-		if (m_TestCaseList[i].nTestStatus == 1)
+		if (m_TestCaseList[i].nTestStatus == 1&&!m_TestCaseList[i].bAuto)
 		{
-			//strPrompt.Format(_T("%s保存测试结果..."),m_TestCaseList[i].TestName.c_str());
-			//AddPrompt(strPrompt);
-			ret = m_DevTest.CommitResult(m_TestSocket,wstr2str(m_TestCaseList[i].TestName));
+			ret = m_DevTest.StopTestItem(m_TestSocket,wstr2str(m_TestCaseList[i].TestName));
 			if (ret<0)
 			{
-				strPrompt.Format(_T("%s保存测试结果失败"),m_TestCaseList[i].TestName.c_str());
+				strPrompt.Format(GetLocalString(_T("IDS_STOP_TEST_FAIL")).c_str(),GetLocalString(m_TestCaseList[i].TestName).c_str(),ret);
 				AddPrompt(strPrompt,TRUE);
 				m_TestCaseList[i].nTestStatus = -1;
 				m_bTestPass = false;
-				break;
 			}
 
-			strPrompt.Format(_T("%s保存测试结果成功"),m_TestCaseList[i].TestName.c_str());
+			strPrompt.Format(_T("%s:%s"),GetLocalString(m_TestCaseList[i].TestName).c_str(),GetLocalString(_T("IDS_PASS")).c_str());
 			AddPrompt(strPrompt);
 			m_TestCaseList[i].nTestStatus = 2;
-			break;
 		}
-	}
-
-	//2.获取下一个未测试的测试项
-	for (i=0;i<m_TestCaseList.size();i++)
-	{
 		if (m_TestCaseList[i].nTestStatus == 0)
 		{
-			strPrompt.Format(_T("%s开始测试..."),m_TestCaseList[i].TestName.c_str());
+			strPrompt.Format(_T("%s:%s"),GetLocalString(m_TestCaseList[i].TestName).c_str(),GetLocalString(_T("IDS_TESTING")).c_str());
 			AddPrompt(strPrompt);
-			ret = m_DevTest.StartTestItem(m_TestSocket,wstr2str(m_TestCaseList[i].TestName));
 			m_TestCaseList[i].nTestStatus = 1;
-			if (ret<0)
+			if (m_TestCaseList[i].TestName.compare(m_Configs.strKeyName)==0)
 			{
-				strPrompt.Format(_T("%s开始测试失败,错误码(%d)"),m_TestCaseList[i].TestName.c_str(),ret);
-				AddPrompt(strPrompt,True);
-				break;
-			}
-		}
-		if (m_TestCaseList[i].TestName.compare(m_Configs.strKeyName)==0)
-		{
-			while(m_TestCaseList[i].nTestStatus==1)
-			{
-				ret = m_DevTest.QueryTestItem(m_TestSocket,wstr2str(m_Configs.strKeyName),strOutput);
-				if (ret < 0)
+				ret = m_DevTest.KeyTest(m_TestSocket,wstr2str(m_Configs.strKeyName),strOutput);
+				if (ret<=0)
 				{
-					strPrompt.Format(_T("%s测试失败,错误码(%d)"),m_TestCaseList[i].TestName.c_str(),ret);
-					AddPrompt(strPrompt,TRUE);
+					strPrompt.Format(GetLocalString(_T("FAILED")).c_str(),GetLocalString(m_TestCaseList[i].TestName).c_str(),ret);
+					AddPrompt(strPrompt,True);
 					break;
 				}
 				else if (ret == 2)
 				{
-					strPrompt.Format(_T("%s测试:%s按键按下"),m_TestCaseList[i].TestName.c_str(),str2wstr(strOutput).c_str());
-					AddPrompt(strPrompt,TRUE);
+					//strPrompt.Format(_T("%s测试:%s按键按下"),m_TestCaseList[i].TestName.c_str(),str2wstr(strOutput).c_str());
+					strPrompt.Format(GetLocalString(_T("IDS_KEY_DOWN")).c_str(),str2wstr(strOutput).c_str());
+					AddPrompt(strPrompt);
+				}
+			}
+			else
+			{
+				ret = m_DevTest.StartTestItem(m_TestSocket,wstr2str(m_TestCaseList[i].TestName));
+				if (ret<0)
+				{
+					strPrompt.Format(GetLocalString(_T("FAILED")).c_str(),GetLocalString(m_TestCaseList[i].TestName).c_str(),ret);
+					AddPrompt(strPrompt,True);
 					break;
 				}
-				Sleep(1000);
 			}
+			break;
 		}
 	}
-	if (i==m_TestCaseList.size())
+
+	if (nConut==0||(m_TestCaseList[nConut-1].nTestStatus!=0&&m_TestCaseList[nConut-1].nTestStatus!=1))
 	{
-		//所有测试项都测试完成,写号
-		std::string strWriteMsg;
-		CString strtmp;
-		strWriteMsg = "UID:1234567890";
-		strPrompt.Format(_T("测试完成"));
+		strPrompt.Format(GetLocalString(_T("IDS_INFO_TEST_OVER")).c_str());
 		AddPrompt(strPrompt);
-		if (m_Configs.bWriteUid)
+		for (i=0;i<m_TestCaseList.size();i++)
 		{
-			if (IDOK == uiddlg.DoModal())
+			if (m_TestCaseList[i].nTestStatus==-1)
 			{
-				strtmp.Format(_T("UID:%s,LANMAC:%s"),uiddlg.strUid,uiddlg.strLanmac);
-				m_DevTest.WriteUidAndLanMac(m_TestSocket,wstr2str(m_Configs.strWriteName),wstr2str((LPCTSTR)strtmp));
+				break;
 			}
+		}
+		if (i>=m_TestCaseList.size())
+		{
+			//保存测试结果
+			//写号
+			WritePara();
 		}
 	}
 }
@@ -1177,49 +1170,57 @@ void CIPSearchDlg::OnBnClickedButtonFail()
 	//获取下一个未测试的测试项
 	for (i=0;i<m_TestCaseList.size();i++)
 	{
-		if (m_TestCaseList[i].nTestStatus == 1)
+		if (m_TestCaseList[i].nTestStatus == 1&&!m_TestCaseList[i].bAuto)
 		{
-			m_TestCaseList[i].nTestStatus = -1;
+			ret = m_DevTest.StopTestItem(m_TestSocket,wstr2str(m_TestCaseList[i].TestName));
+			if (ret<0)
+			{
+				strPrompt.Format(GetLocalString(_T("IDS_STOP_TEST_FAIL")).c_str(),GetLocalString(m_TestCaseList[i].TestName).c_str(),ret);
+				AddPrompt(strPrompt,TRUE);
+				m_TestCaseList[i].nTestStatus = -1;
+				m_bTestPass = false;
+			}
+			strPrompt.Format(_T("%s:%s"),GetLocalString(m_TestCaseList[i].TestName).c_str(),GetLocalString(_T("IDS_FAIL")).c_str());
+			AddPrompt(strPrompt,TRUE);
 		}
 		if (m_TestCaseList[i].nTestStatus == 0)
 		{
-			strPrompt.Format(_T("%s开始测试..."),m_TestCaseList[i].TestName.c_str());
+			strPrompt.Format(_T("%s:%s"),GetLocalString(m_TestCaseList[i].TestName).c_str(),GetLocalString(_T("IDS_TESTING")).c_str());
 			AddPrompt(strPrompt);
 			m_TestCaseList[i].nTestStatus = 1;
-			ret = m_DevTest.StartTestItem(m_TestSocket,wstr2str(m_TestCaseList[i].TestName));
-			if (ret<0)
-			{
-				strPrompt.Format(_T("%s开始测试失败,错误码(%d)"),m_TestCaseList[i].TestName.c_str(),ret);
-				AddPrompt(strPrompt,True);
-				break;
-			}
 			if (m_TestCaseList[i].TestName.compare(m_Configs.strKeyName)==0)
 			{
-				while(m_TestCaseList[i].nTestStatus==1)
+				ret = m_DevTest.KeyTest(m_TestSocket,wstr2str(m_Configs.strKeyName),strOutput);
+				if (ret<0)
 				{
-					ret = m_DevTest.QueryTestItem(m_TestSocket,wstr2str(m_Configs.strKeyName),strOutput);
-					if (ret < 0)
-					{
-						strPrompt.Format(_T("%s测试失败,错误码(%d)"),m_TestCaseList[i].TestName.c_str(),ret);
-						AddPrompt(strPrompt,TRUE);
-						break;
-					}
-					else if (ret == 2)
-					{
-						strPrompt.Format(_T("%s测试:%s按键按下"),m_TestCaseList[i].TestName.c_str(),str2wstr(strOutput).c_str());
-						AddPrompt(strPrompt,TRUE);
-						break;
-					}
-					Sleep(1000);
+					strPrompt.Format(GetLocalString(_T("FAILED")).c_str(),GetLocalString(m_TestCaseList[i].TestName).c_str(),ret);
+					AddPrompt(strPrompt,True);
+					break;
+				}
+				else if (ret == 2)
+				{
+					//strPrompt.Format(_T("%s测试:%s按键按下"),m_TestCaseList[i].TestName.c_str(),str2wstr(strOutput).c_str());
+					strPrompt.Format(GetLocalString(_T("IDS_KEY_DOWN")).c_str(),str2wstr(strOutput).c_str());
+					AddPrompt(strPrompt);
+				}
+			}
+			else
+			{
+				ret = m_DevTest.StartTestItem(m_TestSocket,wstr2str(m_TestCaseList[i].TestName));
+				if (ret<0)
+				{
+					strPrompt.Format(GetLocalString(_T("FAILED")).c_str(),GetLocalString(m_TestCaseList[i].TestName).c_str(),ret);
+					AddPrompt(strPrompt,True);
+					break;
 				}
 			}
 			break;
 		}
 	}
 
-	if (i==m_TestCaseList.size())
+	if (m_TestCaseList[m_TestCaseList.size()-1].nTestStatus!=0&&m_TestCaseList[m_TestCaseList.size()-1].nTestStatus!=1)
 	{
-		strPrompt.Format(_T("所有测试完成"));
+		strPrompt.Format(GetLocalString(_T("IDS_INFO_TEST_OVER")).c_str());
 		AddPrompt(strPrompt);
 	}
 }
@@ -1232,4 +1233,66 @@ void CIPSearchDlg::OnClose()
 		m_pLog = NULL;
 	}
 	CDialog::OnClose();
+}
+
+BOOL CIPSearchDlg::LoadConfig()
+{
+	CString strConfigPath;
+	TCHAR MyexeFullPath[MAX_PATH] = TEXT("C:\\");
+	if(GetModuleFileName(NULL,MyexeFullPath,MAX_PATH)) {
+		TCHAR *pos = _tcsrchr(MyexeFullPath, TEXT('\\'));
+		if(pos) {
+			pos[1] = 0;
+			m_strModulePath = MyexeFullPath;
+		}
+	}
+	strConfigPath = m_strModulePath + _T("config.ini");
+
+	bool bLoadConfig = m_Configs.LoadToolSetting(strConfigPath.GetString());
+	if (!bLoadConfig)
+	{
+		return FALSE;
+	}
+	strConfigPath = m_strModulePath + m_Configs.strLanPath.c_str();
+	if (m_Configs.nCurLan == 1)
+	{
+		strConfigPath = strConfigPath + m_Configs.strCnFilename.c_str();
+	}
+	else
+	{
+		strConfigPath = strConfigPath + m_Configs.strEnFilename.c_str();
+	}
+
+	bLoadConfig = m_LocalLan.LoadToolSetting(strConfigPath.GetString());
+	m_LocalLan.TreeControls(m_hWnd,m_Configs.bDebug?TRUE:FALSE,this->IDD,true);
+	if (!bLoadConfig)
+	{
+		return FALSE;
+	}
+	if(!m_Configs.bDebug) {
+		WalkMenu(GetMenu(),TEXT("MENU"));
+	}
+	GetLocalString(TEXT("LANG:IDS_TEXT_APPNAME"));
+	return TRUE;
+}
+
+VOID CIPSearchDlg::WalkMenu(CMenu *pMenu,CString strMainKeyPart)
+{
+	CString strKey;
+	int     id ;
+	UINT    i;
+	if(NULL == pMenu) return ;
+	for (i=0;i < pMenu->GetMenuItemCount();i++) {
+		strKey.Format(_T("%s_%d"),strMainKeyPart,i);
+		id = pMenu->GetMenuItemID(i);
+		if (0 == id) { 
+			/*If nPos corresponds to a SEPARATOR menu item, the return value is 0. **/
+		} else if (-1 == id) { 
+			/*If the specified item is a pop-up menu (as opposed to an item within the pop-up menu), the return value is –1 **/
+			pMenu->ModifyMenu(i, MF_BYPOSITION, i, m_LocalLan.GetStr((LPCTSTR)strKey).c_str());
+			WalkMenu(pMenu->GetSubMenu(i),strKey);
+		} else {
+			pMenu->ModifyMenu(id, MF_BYCOMMAND, id,m_LocalLan.GetStr((LPCTSTR)strKey).c_str());
+		}
+	}
 }

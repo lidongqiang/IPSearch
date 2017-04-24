@@ -8,7 +8,7 @@ class CConfigDlg : public CDialog
 	DECLARE_DYNAMIC(CConfigDlg)
 
 public:
-	CConfigDlg(CIniSettingBase &Configs,CWnd* pParent = NULL);   // standard constructor
+	CConfigDlg(CIniSettingBase &Configs,CIniLocalLan &LocalLang,CWnd* pParent = NULL);   // standard constructor
 	virtual ~CConfigDlg();
 
 // Dialog Data
@@ -21,7 +21,9 @@ protected:
 
 public:
 	CIniSettingBase &m_Configs;
+	CIniLocalLan    &m_LocalLang;
 public:
 	afx_msg void OnBnClickedBtnOk();
 	virtual BOOL OnInitDialog();
+	afx_msg void OnBnClickedBtnCancel();
 };

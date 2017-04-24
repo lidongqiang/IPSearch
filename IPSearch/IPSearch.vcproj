@@ -325,6 +325,14 @@
 			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
 			<File
+				RelativePath=".\res\2.ico"
+				>
+			</File>
+			<File
+				RelativePath=".\res\2.png"
+				>
+			</File>
+			<File
 				RelativePath=".\res\IPSearch.ico"
 				>
 			</File>
@@ -334,6 +342,10 @@
 			</File>
 			<File
 				RelativePath=".\res\IPSearch.rc2"
+				>
+			</File>
+			<File
+				RelativePath=".\res\logo.bmp"
 				>
 			</File>
 		</Filter>

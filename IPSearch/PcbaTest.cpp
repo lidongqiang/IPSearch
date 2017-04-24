@@ -91,10 +91,17 @@ int CPcbaTest::StartTestItem(SOCKET TestSocket,std::string TestName)
 	std::string strMsg,strSta,strRes,strTestItem,strErrCode;
 	int ret,nErrCode;
 
+
+	//int n =5;
+	//while (n--)
+	//{
+	//	Sleep(1000);
+	//}
+
 	LOGER((CLogger::DEBUG_DUT,"StartTestItem()"));
 
 	//1.发送命令给设备端开始测试 {"TYPE":"CMD", "TEST ITEM":"KEY-TEST", "CMD":"START" }
-	m_Json.ItemtoJson("TYPE","CMD","TEST_ITEM",TestName,"CMD","START","MSG","msg",strMsg);
+	m_Json.ItemtoJson("TYPE","CMD","TEST_ITEM",TestName,"CMD","START",/*"MSG","msg",*/strMsg);
 	LOGER((CLogger::DEBUG_DUT,"send msg:%s",strMsg.c_str()));
 	ret = socket_write(TestSocket,strMsg);
 	if (ret < 0)
@@ -149,7 +156,7 @@ int CPcbaTest::QueryTestItem(SOCKET TestSocket,std::string TestName,std::string 
 	//2.读取设备端返回的结果，确定成功与否，成功返回{"TYPE":"RES", "TEST_ITEM":"test_item", "RES":"QUERY", "MSG":"msg", "STATUS":"ACK", "RESULT":"PASS"}
 	ret = socket_read(TestSocket,strMsg);
 	LOGER((CLogger::DEBUG_DUT,"recv_msg:%s",strMsg.c_str()));
-	if (ret < 0)
+	if (ret <= 0)
 	{
 		LOGER((CLogger::DEBUG_DUT,"%s:recv data failed\r\n",TestName.c_str()));
 		return -2;
@@ -176,7 +183,7 @@ int CPcbaTest::QueryTestItem(SOCKET TestSocket,std::string TestName,std::string 
 	return 0;
 }
 
-int CPcbaTest::CommitResult(SOCKET TestSocket,std::string TestName)
+int CPcbaTest::CommitResult(SOCKET TestSocket,std::string TestName,bool bPass)
 {
 	std::string strMsg,strSta,strRes,strTestItem,strErrCode;
 	int ret,nErrCode;
@@ -184,7 +191,14 @@ int CPcbaTest::CommitResult(SOCKET TestSocket,std::string TestName)
 	LOGER((CLogger::DEBUG_DUT,"CommitResult()"));
 
 	//1.发送命令给设备端保存测试结果 {"TYPE":"CMD", "TEST_ITEM":"test_item", "CMD":"SAVE" }
-	m_Json.ItemtoJson("TYPE","CMD","TEST_ITEM",TestName,"CMD","SAVE",strMsg);
+	if (bPass)
+	{
+		m_Json.ItemtoJson("TYPE","CMD","TEST_ITEM",TestName,"CMD","SAVE",strMsg);
+	}
+	else
+	{
+		m_Json.ItemtoJson("TYPE","CMD","TEST_ITEM",TestName,"CMD","SAVE",strMsg);
+	}
 	LOGER((CLogger::DEBUG_DUT,"send_msg:%s",strMsg.c_str()));
 	ret = socket_write(TestSocket,strMsg);
 	if (ret < 0)
@@ -213,6 +227,46 @@ int CPcbaTest::CommitResult(SOCKET TestSocket,std::string TestName)
 	}
 	return 0;
 }
+
+int CPcbaTest::StopTestItem(SOCKET TestSocket,std::string TestName)
+{
+	std::string strMsg,strSta,strRes,strTestItem,strErrCode;
+	int ret,nErrCode;
+
+	LOGER((CLogger::DEBUG_DUT,"StopTestItem()"));
+
+	//1.发送命令给设备端保存测试结果 {"TYPE":"CMD", "TEST_ITEM":"test_item", "CMD":"STOP" }
+	m_Json.ItemtoJson("TYPE","CMD","TEST_ITEM",TestName,"CMD","STOP",strMsg);
+
+	LOGER((CLogger::DEBUG_DUT,"send_msg:%s",strMsg.c_str()));
+	ret = socket_write(TestSocket,strMsg);
+	if (ret < 0)
+	{
+		LOGER((CLogger::DEBUG_DUT,"%s:socket:send data failed\r\n",TestName));
+		return -1;
+	}
+
+	//2.读取设备端返回的结果，确定成功与否，成功返回{"TYPE":"RES", "TEST_ITEM":"test_item", "RES":"STOP", "STATUS":"ACK"}
+	socket_read(TestSocket,strMsg);
+	LOGER((CLogger::DEBUG_DUT,"recv_msg:%s\n",strMsg.c_str()));
+	if (ret < 0)
+	{
+		LOGER((CLogger::DEBUG_DUT,"%s:recv data failed\r\n",strMsg.c_str()));
+		return -2;
+	}
+	m_Json.JsontoItem("RES",strRes,"STATUS",strSta,"TEST_ITEM",strTestItem,strMsg);
+	m_Json.JsontoItem("ERR_CODE",strErrCode,strMsg);
+	if (stringCompareIgnoreCase(strRes,"STOP")||stringCompareIgnoreCase(strTestItem,TestName))
+	{
+		return -3;
+	}
+	if (!stringCompareIgnoreCase(strSta,"NAK"))
+	{
+		return -atoi(strErrCode.c_str());
+	}
+	return 0;
+}
+
 
 int CPcbaTest::WriteUidAndLanMac(SOCKET TestSocket,std::string TestName,std::string strWriteMsg)
 {
@@ -285,6 +339,44 @@ int CPcbaTest::WriteUidAndLanMac(SOCKET TestSocket,std::string TestName,std::str
 			break;
 		}
 		Sleep(500);
+	}
+	return 0;
+}
+
+int CPcbaTest::WriteUid(SOCKET TestSocket,std::string TestName,std::string strWriteMsg)
+{
+	return 0;
+}
+
+int CPcbaTest::WriteLanMac(SOCKET TestSocket,std::string TestName,std::string strWriteMsg)
+{
+	return 0;
+}
+int CPcbaTest::KeyTest(SOCKET TestSocket,std::string TestName,std::string &strOutput)
+{
+	std::string strMsg,strSta,strRes,strTestItem,strResult,strErrCode;
+	int ret,nErrCode;
+	//int n = 5;
+	LOGER((CLogger::DEBUG_DUT,"KeyTest()\n"));
+	ret = StartTestItem(TestSocket,TestName);
+	if (ret < 0)
+	{
+		LOGER((CLogger::DEBUG_DUT,"StartTestItem failed,errcode:%d\n",ret));
+		return ret;
+	}
+	while(1)
+	{
+		ret = QueryTestItem(TestSocket,TestName,strOutput);
+		if (ret < 0)
+		{
+			LOGER((CLogger::DEBUG_DUT,"QueryTestItem failed,errcode:%d\n",ret));
+			return ret;
+		}
+		else if (ret == 2)
+		{
+			return ret;
+		}
+		Sleep(1000);
 	}
 	return 0;
 }

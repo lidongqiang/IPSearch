@@ -271,29 +271,26 @@ bool CIniSettingBase::LoadToolSetting(std::wstring strConfig)
         pIniFile = NULL;
         return false;
     }
-	///********************** Language config **********************/
-	//strLanPath			= GetStr(TEXT("Language:LangPath"));
-	//nValue				= _wtoi(GetStr(TEXT("Selected")).c_str());
-	//nCurLan				= ((1 <= nValue)&&(2 >= nValue))?nValue:1;
-	//strCnFilename		= GetStr(TEXT("Lang1File"));
-	//strEnFilename		= GetStr(TEXT("Lang2File"));
-	//strCnFontName		= GetStr(TEXT("Lang1FontName"));
-	//strEnFontName		= GetStr(TEXT("Lang2FontName"));
-	//nValue				= _wtoi(GetStr(TEXT("Lang1FontSize")).c_str());
-	//nCnFontSize			= (0 < nValue)?nValue:1;
-	//nValue				= _wtoi(GetStr(TEXT("Lang2FontSize")).c_str());
-	//nEnFontSize			= (0 < nValue)?nValue:1;
+	/********************** Language config **********************/
+	strLanPath			= GetStr(TEXT("Language:LangPath"));
+	nValue				= _wtoi(GetStr(TEXT("Selected")).c_str());
+	nCurLan				= ((1 <= nValue)&&(2 >= nValue))?nValue:1;
+	strCnFilename		= GetStr(TEXT("Lang1File"));
+	strEnFilename		= GetStr(TEXT("Lang2File"));
+	strCnFontName		= GetStr(TEXT("Lang1FontName"));
+	strEnFontName		= GetStr(TEXT("Lang2FontName"));
+	nValue				= _wtoi(GetStr(TEXT("Lang1FontSize")).c_str());
+	nCnFontSize			= (0 < nValue)?nValue:1;
+	nValue				= _wtoi(GetStr(TEXT("Lang2FontSize")).c_str());
+	nEnFontSize			= (0 < nValue)?nValue:1;
 	///********************** System config **********************/
-	//strLogPath          = GetStr(TEXT("System:LogPath"));
-	//bDebug              = 1 == _wtoi(GetStr(TEXT("Debug")).c_str());
-	//bReadInfo			= 1 == _wtoi(GetStr(TEXT("READ")).c_str());
-	//bAutoTest			= 1 == _wtoi(GetStr(TEXT("AUTO")).c_str());
-	//nLogLevel           = _wtoi(GetStr(TEXT("LogLevel")).c_str());
 	szLan                   = GetStr(TEXT("CONFIG:Lan"));
+	bDebug              = 1 == _wtoi(GetStr(TEXT("Debug")).c_str());
 	bSdcardTest			= 1 == _wtoi(GetStr(TEXT("EmmcTest")).c_str());
 	bWifiTest			= 1 == _wtoi(GetStr(TEXT("WifiTest")).c_str());
 	bKeyTest			= 1 == _wtoi(GetStr(TEXT("KeyTest")).c_str());
-	bMonitorTest		= 1 == _wtoi(GetStr(TEXT("EmmcTest")).c_str());
+	bLedTest			= 1 == _wtoi(GetStr(TEXT("LedTest")).c_str());
+	bMonitorTest		= 1 == _wtoi(GetStr(TEXT("MonitorTest")).c_str());
 	bInterphoneTest		= 1 == _wtoi(GetStr(TEXT("InterphoneTest")).c_str());
 	bPtzTest			= 1 == _wtoi(GetStr(TEXT("PtzTest")).c_str());
 	bIrcutTest			= 1 == _wtoi(GetStr(TEXT("IrcutTest")).c_str());
@@ -306,6 +303,7 @@ bool CIniSettingBase::LoadToolSetting(std::wstring strConfig)
 	strInterphoneName	= GetStr(TEXT("InterphoneName"));
 	strPtzName			= GetStr(TEXT("PtzName"));
 	strIrcutName		= GetStr(TEXT("IrcutName"));
+	strLedName			= GetStr(TEXT("LedName"));
 	strWriteName		= GetStr(TEXT("WriteName"));
 	strLogPath              = GetStr(TEXT("LogPath"));
 	nLogLevel           = _wtoi(GetStr(TEXT("LogLevel")).c_str());
@@ -399,104 +397,13 @@ bool CIniSettingBase::SaveToolSetting(std::wstring strConfig)
     if(!pIniFile ) {
         pIniFile    = new CIniFile;
     }
-#if 0
-    if(pIniFile) {
-		//
-		swprintf(szTemp1,nof(szTemp1),TEXT("%d"),nCurLan);
-		SetStr( TEXT("Language:Selected")          , szTemp1);
 
-        SetStr( TEXT("System:LogPath")  , strLogPath);
-        SetStr( TEXT("Debug")			, bDebug   ?checke:unckeck);
-        SetStr( TEXT("READ")    		, bReadInfo ?checke:unckeck);
-		SetStr( TEXT("AUTO")    		, bAutoTest ?checke:unckeck);
-
-        SetStr( TEXT("DSWR")    		, devsn.bEnable ?checke:unckeck);
-        SetStr( TEXT("DSPF")        	, devsn.strPrefix);
-        SetStr( TEXT("DSSF")        	, devsn.strSuffix);
-        SetStr( TEXT("DSSS") 			, devsn.strStartSn);
-		SetStr( TEXT("DSSC") 			, devsn.strCurrentSn);
-		SetStr( TEXT("DSSD") 			, devsn.strEndSn);
-
-        swprintf(szTemp1,nof(szTemp1),TEXT("%d"),devsn.nAutoMode);
-        SetStr( TEXT("DSAI")          , szTemp1);
-		swprintf(szTemp1,nof(szTemp1),TEXT("%d"),devsn.nSnCount);
-		SetStr( TEXT("DSST")          , szTemp1);
-		swprintf(szTemp1,nof(szTemp1),TEXT("%d"),devsn.nRemainCount);
-		SetStr( TEXT("DSSR")          , szTemp1);
-		/********************** WifiMac **********************/
-		SetStr( TEXT("WMSS") 			, WifiMac.strStartMac);
-		SetStr( TEXT("WMSC") 			, WifiMac.strCurrentMac);
-		SetStr( TEXT("WMSD") 			, WifiMac.strEndMac);
-		SetStr( TEXT("WMWR")    		, WifiMac.bEnable ?checke:unckeck);
-		swprintf(szTemp1,nof(szTemp1),TEXT("%d"),WifiMac.nCount);
-		SetStr( TEXT("WMST")          , szTemp1);
-		swprintf(szTemp1,nof(szTemp1),TEXT("%d"),WifiMac.nRemainCount);
-		SetStr( TEXT("WMSR")          , szTemp1);
-		swprintf(szTemp1,nof(szTemp1),TEXT("%d"),WifiMac.nAutoMode);
-		SetStr( TEXT("WMAI")          , szTemp1);
-		swprintf(szTemp1,nof(szTemp1),TEXT("%d"),WifiMac.dwType);
-		SetStr( TEXT("WMTP")          , szTemp1);
-		/*file*/
-		SetStr( TEXT("WMFN") 			, confPath.filePath[FLAG_WIFIMAC]);
-		swprintf(szTemp1,nof(szTemp1),TEXT("%d"),confPath.lFilePos[FLAG_WIFIMAC]);
-		SetStr( TEXT("WMFP")          , szTemp1);
-		swprintf(szTemp1,nof(szTemp1),TEXT("%d"),confPath.dwLineCnt[FLAG_WIFIMAC]);
-		SetStr( TEXT("WMLC")          , szTemp1);
-		swprintf(szTemp1,nof(szTemp1),TEXT("%d"),confPath.dwLinePos[FLAG_WIFIMAC]);
-		SetStr( TEXT("WMLP")          , szTemp1);
-
-		/********************** BtMac **********************/
-		SetStr( TEXT("BMSS") 			, BtMac.strStartMac);
-		SetStr( TEXT("BMSC") 			, BtMac.strCurrentMac);
-		SetStr( TEXT("BMSD") 			, BtMac.strEndMac);
-		SetStr( TEXT("BMWR")    		, BtMac.bEnable ?checke:unckeck);
-		swprintf(szTemp1,nof(szTemp1),TEXT("%d"),BtMac.nCount);
-		SetStr( TEXT("BMST")          , szTemp1);
-		swprintf(szTemp1,nof(szTemp1),TEXT("%d"),BtMac.nRemainCount);
-		SetStr( TEXT("BMSR")          , szTemp1);
-		swprintf(szTemp1,nof(szTemp1),TEXT("%d"),BtMac.nAutoMode);
-		SetStr( TEXT("BMAI")          , szTemp1);
-		swprintf(szTemp1,nof(szTemp1),TEXT("%d"),BtMac.dwType);
-		SetStr( TEXT("BMTP")          , szTemp1);
-		/*file*/
-		SetStr( TEXT("BMFN") 			, confPath.filePath[FLAG_BTMAC]);
-		swprintf(szTemp1,nof(szTemp1),TEXT("%d"),confPath.lFilePos[FLAG_BTMAC]);
-		SetStr( TEXT("BMFP")          , szTemp1);
-		swprintf(szTemp1,nof(szTemp1),TEXT("%d"),confPath.dwLineCnt[FLAG_BTMAC]);
-		SetStr( TEXT("BMLC")          , szTemp1);
-		swprintf(szTemp1,nof(szTemp1),TEXT("%d"),confPath.dwLinePos[FLAG_BTMAC]);
-		SetStr( TEXT("BMLP")          , szTemp1);
-
-		/********************** LanMac **********************/
-		SetStr( TEXT("LMSS") 			, LanMac.strStartMac);
-		SetStr( TEXT("LMSC") 			, LanMac.strCurrentMac);
-		SetStr( TEXT("LMSD") 			, LanMac.strEndMac);
-		SetStr( TEXT("LMWR")    		, LanMac.bEnable ?checke:unckeck);
-		swprintf(szTemp1,nof(szTemp1),TEXT("%d"),LanMac.nCount);
-		SetStr( TEXT("LMST")          , szTemp1);
-		swprintf(szTemp1,nof(szTemp1),TEXT("%d"),LanMac.nRemainCount);
-		SetStr( TEXT("LMSR")          , szTemp1);
-		swprintf(szTemp1,nof(szTemp1),TEXT("%d"),LanMac.nAutoMode);
-		SetStr( TEXT("LMAI")          , szTemp1);
-		swprintf(szTemp1,nof(szTemp1),TEXT("%d"),LanMac.dwType);
-		SetStr( TEXT("LMTP")          , szTemp1);
-		/*file*/
-		SetStr( TEXT("LMFN") 			, confPath.filePath[FLAG_LANMAC]);
-		swprintf(szTemp1,nof(szTemp1),TEXT("%d"),confPath.lFilePos[FLAG_LANMAC]);
-		SetStr( TEXT("LMFP")          , szTemp1);
-		swprintf(szTemp1,nof(szTemp1),TEXT("%d"),confPath.dwLineCnt[FLAG_LANMAC]);
-		SetStr( TEXT("LMLC")          , szTemp1);
-		swprintf(szTemp1,nof(szTemp1),TEXT("%d"),confPath.dwLinePos[FLAG_LANMAC]);
-		SetStr( TEXT("LMLP")          , szTemp1);
-
-		return pIniFile->Save(szFileName);
-    }
-#endif
 	if(pIniFile) {
 		SetStr( TEXT("CONFIG:Lan")  	, szLan);
 		SetStr( TEXT("EmmcTest")			, bSdcardTest   ?checke:unckeck);
 		SetStr( TEXT("WifiTest")    		, bWifiTest ?checke:unckeck);
 		SetStr( TEXT("KeyTest")    		, bKeyTest ?checke:unckeck);
+		SetStr( TEXT("LedTest")    		, bLedTest ?checke:unckeck);
 		SetStr( TEXT("MonitorTest")    		, bMonitorTest ?checke:unckeck);
 		SetStr( TEXT("InterphoneTest")    		, bInterphoneTest ?checke:unckeck);
 		SetStr( TEXT("PtzTest")    		, bPtzTest ?checke:unckeck);

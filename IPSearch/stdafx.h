@@ -39,7 +39,12 @@
 #include <afxdhtml.h>
 
 
-
+#include "cmBase.h"
+#ifdef _DEBUG
+#pragma comment(lib,"cmMfcLib_vs2008_Debug.lib")
+#else
+#pragma comment(lib,"cmMfcLib_vs2008.lib")
+#endif
 
 
 

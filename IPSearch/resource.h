@@ -17,6 +17,8 @@
 #define IDD_PLAYER_DIALOG               133
 #define IDD_VIDEO_DIALOG                133
 #define IDD_UID_DIALOG                  134
+#define IDI_ICON1                       138
+#define IDB_BITMAP_LOGO                 140
 #define ID_BTN_SERCH                    1001
 #define IDC_LIST_DEVICE                 1002
 #define IDC_EDIT_IP                     1003
@@ -66,10 +68,16 @@
 #define IDC_BUTTON_FAIL                 1044
 #define IDC_EDIT_MAC                    1044
 #define IDC_EDIT5                       1045
+#define IDC_STATIC_IP                   1045
 #define IDC_EDIT6                       1046
+#define IDC_STATIC_UID                  1046
 #define IDC_EDIT7                       1047
+#define IDC_STATIC_DEVICENAME           1047
 #define IDC_EDIT8                       1048
+#define IDC_STATIC_MAC                  1048
 #define IDC_COMBO2                      1049
+#define IDC_STATIC_TESTITEM             1049
+#define IDC_STATIC_WRITEITEM            1050
 #define IDC_EDIT10                      1051
 #define IDC_COMBO3                      1054
 #define IDC_EDIT11                      1055
@@ -80,9 +88,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        135
+#define _APS_NEXT_RESOURCE_VALUE        141
 #define _APS_NEXT_COMMAND_VALUE         32771
-#define _APS_NEXT_CONTROL_VALUE         1045
+#define _APS_NEXT_CONTROL_VALUE         1051
 #define _APS_NEXT_SYMED_VALUE           108
 #endif
 #endif

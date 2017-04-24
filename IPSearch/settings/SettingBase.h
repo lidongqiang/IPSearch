@@ -1,7 +1,7 @@
 #ifndef _SETTINGBASE_H_
 #define _SETTINGBASE_H_
 #define USER_LOGIN
-#define APP_VERSION " V1.1.0"
+#define APP_VERSION " V1.0.0"
 #include "inifile.h"
 //#include "../config.h"
 
@@ -148,12 +148,23 @@ public:
     std::wstring DecryptPassWord(std::wstring ciphertext);
 public:
 	std::wstring szLan;
+	std::wstring			strLanPath;
+	int						nCurLan;
+	std::wstring			strCnFilename;
+	std::wstring			strEnFilename;
+	std::wstring			strCnFontName;
+	std::wstring			strEnFontName;
+	int						nCnFontSize;
+	int						nEnFontSize;
+	bool					bDebug;	
+
 	std::wstring strSdcardName;
 	std::wstring strWifiName;
 	std::wstring strKeyName;
 	std::wstring strMonitorName;
 	std::wstring strInterphoneName;
 	std::wstring strPtzName;
+	std::wstring strLedName;
 	std::wstring strIrcutName;
 	std::wstring strWriteName;
 	std::wstring strLogPath;
@@ -162,6 +173,7 @@ public:
 	bool bSdcardTest;
 	bool bWifiTest;
 	bool bKeyTest;
+	bool bLedTest;
 	bool bMonitorTest;
 	bool bInterphoneTest;
 	bool bPtzTest;

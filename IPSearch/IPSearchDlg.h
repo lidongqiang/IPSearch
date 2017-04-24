@@ -23,7 +23,8 @@ typedef struct
 typedef struct
 {
 	std::wstring TestName;
-	int nTestStatus;//0--Œ¥≤‚ ‘£¨1---≤‚ ‘÷–£¨2----≤‚ ‘≥…π¶£¨-1----≤‚ ‘ ß∞‹
+	bool bAuto;//TRUE ◊‘∂Ø≤‚ ‘£¨FALSE  ÷∂Ø≤‚ ‘
+	int nTestStatus;//0--Œ¥≤‚ ‘£¨1---≤‚ ‘÷–£¨2----≤‚ ‘≥…π¶£¨-1----≤‚ ‘ ß∞‹,3--------»Àπ§≈–∂œ
 }TestCase,STRUCT_TEST_CASE;
 typedef vector<STRUCT_TEST_CASE> TEST_CASE_VECTOR;
 // CIPSearchDlg ∂‘ª∞øÚ
@@ -86,6 +87,9 @@ public:
 	void RtspPlay();
 	void AddPrompt(CString strPrompt,BOOL bError=FALSE,INT iColor = 0);
 	void UpdateTestInfo(std::string strMsg);
+	void WritePara();
+	BOOL LoadConfig();
+	VOID WalkMenu(CMenu *pMenu,CString strMainKeyPart);
 public:
 	afx_msg void OnBnClickedBtnSerch();
 	afx_msg void OnBnClickedButtonTest();
