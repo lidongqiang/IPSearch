@@ -5,6 +5,7 @@
 #include "debug.h"
 #define LOG(A)
 #define LOGER(a) if(m_pLogger) m_pLogger->PrintMSGA a
+#define nof(x) (sizeof(x) / sizeof(x[0]))
 
 struct STATUS_DATA
 {
@@ -46,7 +47,8 @@ class CPcbaTest
 public:
 	CLogger *m_pLogger;
 	CJsonConvert m_Json;
-
+	std::wstring m_strTestPath;
+	std::wstring m_strIp;
 public:
 	CPcbaTest();
 	//~CPcbaTest();
@@ -56,15 +58,24 @@ public:
 	void StopLog(){
 		m_pLogger = NULL;
 	}
+	void SetTestPath(std::wstring strTestPath)
+	{
+		m_strTestPath = strTestPath;
+	}
+	void SetDevIp(std::wstring strDevIp)
+	{
+		m_strIp = strDevIp;
+	}
 	bool stringCompareIgnoreCase(std::string lhs,std::string rhs)
 	{
 		return _stricmp(lhs.c_str(),rhs.c_str());
 	}
+	int UploadFile(std::string strFileName);
 	int EnterTestMode(SOCKET TestSocket);
 	int ExitTest(SOCKET TestSocket);
 	int StartTestItem(SOCKET TestSocket,std::string TestName);
 	int QueryTestItem(SOCKET TestSocket,std::string TestName,std::string &strOutput);
-	int CommitResult(SOCKET TestSocket,std::string TestName,bool bPass=true);
+	int CommitResult(SOCKET TestSocket,std::string TestName,std::string strResult);
 	int StopTestItem(SOCKET TestSocket,std::string TestName);
 	int WriteUidAndLanMac(SOCKET TestSocket,std::string TestName,std::string strWriteMsg);
 	int WriteUid(SOCKET TestSocket,std::string TestName,std::string strWriteMsg);

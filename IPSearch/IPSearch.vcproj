@@ -229,6 +229,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\scriptexe.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\stdafx.cpp"
 				>
 				<FileConfiguration
@@ -300,6 +304,10 @@
 			</File>
 			<File
 				RelativePath=".\Resource.h"
+				>
+			</File>
+			<File
+				RelativePath=".\scriptexe.h"
 				>
 			</File>
 			<File

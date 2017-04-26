@@ -105,7 +105,7 @@ END_MESSAGE_MAP()
 CIPSearchDlg::CIPSearchDlg(CWnd* pParent /*=NULL*/)
 	: CDialog(CIPSearchDlg::IDD, pParent),m_listSelect(-1),m_bRun(false),m_bTestPass(false)
 {
-	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
+	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME1);
 }
 
 void CIPSearchDlg::DoDataExchange(CDataExchange* pDX)
@@ -167,34 +167,11 @@ BOOL CIPSearchDlg::OnInitDialog()
 	// TODO: 在此添加额外的初始化代码
 	//m_PlayDlg.Create(IDD_PLAYER_DIALOG);
 	m_pRecvThread = NULL;
-	CRect rect;   
 
-	// 获取编程语言列表视图控件的位置和大小   
-	m_listDevice.GetClientRect(&rect);   
+	initUi();
 
-	// 为列表视图控件添加全行选中和栅格风格   
-	m_listDevice.SetExtendedStyle(m_listDevice.GetExtendedStyle() | LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES);  
-	m_listDevice.InsertColumn(0,_T("UID"),LVCFMT_CENTER, rect.Width()/4, 0);
-	m_listDevice.InsertColumn(1,_T("IP"),LVCFMT_CENTER, rect.Width()/2, 1);
-	m_listDevice.InsertColumn(2,_T("设备名称"),LVCFMT_CENTER, rect.Width()/4, 2);
-	m_listDevice.DeleteAllItems();
-	
-	CFont font;
-	font.CreateFont(-13,10,0,0,FW_NORMAL,FALSE,FALSE,0,  
-		ANSI_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,  
-		DEFAULT_QUALITY,DEFAULT_PITCH|FF_DONTCARE,_T("宋体"));
-	m_listInfo.SetFont(&font);
-	font.Detach();
-	m_listInfo.SetWindowBKColor(RGB(0,0,0));
-
-	//播放设置
-	m_cAVPlayer.SetHWND(GetDlgItem(IDC_STATIC_VIDEO)->GetSafeHwnd());   // 设置播放器的窗口句柄
-	CRect rtTop;  
-	CStatic *pWnd = (CStatic*)GetDlgItem(IDC_STATIC_VIDEO);  
-	CDC *cDc = pWnd->GetDC();  
-	pWnd->GetClientRect(&rtTop);  
-	cDc->FillSolidRect(rtTop.left, rtTop.top, rtTop.Width(), rtTop.Height(),RGB(0,0,0));  
-	Invalidate(FALSE);  
+	//rtsp播放设置
+	m_cAVPlayer.SetHWND(GetDlgItem(IDC_STATIC_VIDEO)->GetSafeHwnd()); 
 	//加载config.ini
 	if (!LoadConfig())
 	{
@@ -205,14 +182,45 @@ BOOL CIPSearchDlg::OnInitDialog()
 	{
 		m_Configs.strLogPath=m_strModulePath + _T("Log\\");
 	}
-
+	if (m_Configs.strTestPath.empty())
+	{
+		m_Configs.strTestPath=m_strModulePath + _T("test\\");
+	}
+	
 	if(m_Configs.nLogLevel != DLEVEL_NONE ) {
 		CLogger::DEBUG_LEVEL level = m_Configs.nLogLevel == DLEVEL_DEBUG?CLogger::DEBUG_ALL:
 			(m_Configs.nLogLevel  == DLEVEL_INFO ?CLogger::DEBUG_INFO:CLogger::DEBUG_ERROR);
 	m_pLog = CLogger::StartLog((m_Configs.strLogPath + TEXT("IPCameraTool-") + CLogger::TimeStr(true, true)).c_str(), level);    
 	}
+
 	LDEGMSGW((CLogger::DEBUG_INFO, _T("IPCameraTool start run")));
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
+}
+
+void CIPSearchDlg::initUi()
+{
+	m_pRecvThread = NULL;
+	CRect rect;   
+	// 获取编程语言列表视图控件的位置和大小   
+	m_listDevice.GetClientRect(&rect);   
+
+	// 为列表视图控件添加全行选中和栅格风格   
+	m_listDevice.SetExtendedStyle(m_listDevice.GetExtendedStyle() | LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES);  
+	m_listDevice.InsertColumn(0,_T("UID"),LVCFMT_CENTER, rect.Width()/4, 0);
+	m_listDevice.InsertColumn(1,_T("IP"),LVCFMT_CENTER, rect.Width()/2, 1);
+	m_listDevice.InsertColumn(2,_T("设备名称"),LVCFMT_CENTER, rect.Width()/4, 2);
+	m_listDevice.DeleteAllItems();
+
+	CFont font;
+	font.CreateFont(-13,10,0,0,FW_NORMAL,FALSE,FALSE,0,  
+		ANSI_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,  
+		DEFAULT_QUALITY,DEFAULT_PITCH|FF_DONTCARE,_T("宋体"));
+	m_listInfo.SetFont(&font);
+	font.Detach();
+	m_listInfo.SetWindowBKColor(RGB(0,0,0));
+
+	GetDlgItem(IDC_BUTTON_PASS)->EnableWindow(FALSE);
+	GetDlgItem(IDC_BUTTON_FAIL)->EnableWindow(FALSE);
 }
 
 LRESULT CIPSearchDlg::OnHandleUpdateConfigMsg(WPARAM wParam,LPARAM lParam)
@@ -346,6 +354,14 @@ void CIPSearchDlg::OnPaint()
 	}
 	else
 	{
+		CClientDC dc(this);
+		CBrush m_brush(RGB(0,0,0));
+
+		CStatic *frame=(CStatic *)GetDlgItem(IDC_STATIC_VIDEO);
+		CRect rect;
+		frame->GetWindowRect(rect);
+		ScreenToClient(rect);
+		dc.FillRect(rect,&m_brush);
 		CDialog::OnPaint();
 	}
 }
@@ -365,6 +381,7 @@ void CIPSearchDlg::OnBnClickedBtnSerch()
 	std::string strUid,strAddr,strDevname;
 	m_listDevice.DeleteAllItems();
 
+	GetDlgItem(ID_BTN_SERCH)->EnableWindow(FALSE);
 	WORD wVersionRequested = MAKEWORD(2, 2);  
 	WSADATA wsaData;  
 	if(0 != WSAStartup(wVersionRequested, &wsaData))  
@@ -438,10 +455,12 @@ void CIPSearchDlg::OnBnClickedBtnSerch()
 	WSACleanup();
 	if (nIndex==0)
 	{
-		AfxMessageBox(_T("没有搜索的任何设备"));
+		MessageBox(GetLocalString(_T("IDS_SEARCH_NODEVICE")).c_str(),_T("IPCamera"),MB_OK|MB_ICONWARNING);
 	}
 	else
-		AfxMessageBox(_T("搜索完成"));
+		//AfxMessageBox(_T("搜索完成"));
+		MessageBox(GetLocalString(_T("IDS_SEARCH_DEVICE_FINISH")).c_str(),_T("IPCamera"),MB_OK|MB_ICONWARNING);
+	GetDlgItem(ID_BTN_SERCH)->EnableWindow(TRUE);
 }
 
 void CIPSearchDlg::ParseDevInfo(char *msg,CString &strUid,CString &strAddr,CString &strDevname)
@@ -565,6 +584,7 @@ void CIPSearchDlg::OnBnClickedButtonTest()
 	if (m_bRun)
 	{
 		this->SetDlgItemText(IDC_BUTTON_TEST,GetLocalString(_T("IDS_TEXT_STOPING_BUTTON")).c_str());
+		ExitTest();
 		m_bRun = false;
 		closesocket(m_TestSocket);
 
@@ -655,12 +675,18 @@ BOOL CIPSearchDlg::TestProc()
 	CLogger         *logger = NULL;
 
 	m_bRun = TRUE;
+	GetDlgItem(IDC_BUTTON_PASS)->EnableWindow(TRUE);
+	GetDlgItem(IDC_BUTTON_FAIL)->EnableWindow(TRUE);
 	if (m_listInfo.GetCount()>0) {
 		PostMessage(WM_UPDATE_MSG,UPDATE_LIST,LIST_EMPTY);
 	}
 	CLogger::DEBUG_LEVEL level = CLogger::DEBUG_ALL;
 	logger = CLogger::StartLog((m_Configs.strLogPath + CLogger::TimeStr(true, true)).c_str(), level);    
 	if(logger) m_DevTest.StartLog(logger);
+
+	m_DevTest.SetTestPath(m_Configs.strTestPath);
+	m_DevTest.SetDevIp(m_strIp.GetBuffer(m_strIp.GetLength()));
+	m_strIp.ReleaseBuffer(m_strIp.GetLength());
 	//1.连接设备
 	strPrompt.Format(GetLocalString(_T("IDS_INFO_CONN_DEVICE")).c_str(),m_strIp);
 	AddPrompt(strPrompt);
@@ -674,41 +700,23 @@ BOOL CIPSearchDlg::TestProc()
 	strPrompt.Format(GetLocalString(_T("IDS_INFO_CONN_PASS")).c_str());
 	AddPrompt(strPrompt);
 
-	//strPrompt.Format(_T("进入测试模式..."));
-	//AddPrompt(strPrompt);
-	//m_Json.ItemtoJson("TYPE","CMD","CMD","ENTER",strMsg);
-	//ret = socket_write(m_TestSocket,strMsg);
-
-	//if (ret < 0)
-	//{
-	//	strPrompt.Format(_T("socket:send data failed"));
-	//	AddPrompt(strPrompt,TRUE);
-	//	//AfxMessageBox(_T("socket:send data failed"));
-	//	return FALSE;
-	//}
-
-	////2.读取设备端返回的结果，确定成功与否，成功放回{"TYPE":"RES", "STATUS":"PASS"}
-	//std::string strTest;
-	//socket_read(m_TestSocket,strMsg);
-	////AfxMessageBox(str2wstr(strMsg).c_str());
-	//if (ret < 0)
-	//{
-	//	AfxMessageBox(_T("socket:recv data failed"));
-	//	return FALSE;
-	//}
-	//m_Json.JsontoItem("STATUS",strSta,strMsg);
-	//m_Json.JsontoInt("ERR_CODE",nErrCode,strMsg);
-	//if (strSta.compare("NAK")==0)
-	//{
-	//	strPrompt.Format(_T("进入测试模式失败，错误码:%d"),nErrCode);
-	//	AddPrompt(strPrompt,TRUE);
-	//	return FALSE;
-	//}
-	//strPrompt.Format(_T("进入测试模式成功"));
-	//AddPrompt(strPrompt);
-
 	//打开rtsp流
 	RtspPlay();
+
+	strPrompt.Format(GetLocalString(_T("IDS_INFO_ENTER_TEST")).c_str());
+	AddPrompt(strPrompt);
+	ret = m_DevTest.EnterTestMode(m_TestSocket);
+	if (ret < 0)
+	{
+		strPrompt.Format(GetLocalString(_T("IDS_INFO_ENTER_TEST_FAIL")).c_str(),ret);
+		AddPrompt(strPrompt,TRUE);
+	}
+	else
+	{
+		strPrompt.Format(GetLocalString(_T("IDS_INFO_ENTER_TEST_PASS")).c_str());
+		AddPrompt(strPrompt);
+	}
+
 
 	//3.创建接收设备端的消息的线程，专门用于接收设备端消息
 	//m_pRecvThread = AfxBeginThread(RecvDeviceThread,this);
@@ -1028,6 +1036,51 @@ void CIPSearchDlg::OnBnClickedButtonNext()
 
 }
 
+void CIPSearchDlg::SaveTestResult()
+{
+	int i,nRet;
+	int nResult = 0;
+	CString strPromt;
+	CString strTmp;
+	for (i=0;i<m_TestCaseList.size();i++)
+	{
+		if (m_TestCaseList[i].TestName.compare(m_Configs.strSdcardName)==0&&m_TestCaseList[i].nTestStatus==2)
+		{
+			nResult|=ITEM_SDCARD_MASK;
+		}
+		else if (m_TestCaseList[i].TestName.compare(m_Configs.strWifiName)==0&&m_TestCaseList[i].nTestStatus==2)
+		{
+			nResult|=ITEM_WIFI_MASK;
+		}
+		else if (m_TestCaseList[i].TestName.compare(m_Configs.strKeyName)==0&&m_TestCaseList[i].nTestStatus==2)
+		{
+			nResult|=ITEM_KEY_MASK;
+		}
+		else if (m_TestCaseList[i].TestName.compare(m_Configs.strInterphoneName)==0&&m_TestCaseList[i].nTestStatus==2)
+		{
+			nResult|=ITEM_INTERPHONE_MASK;
+		}
+		else if (m_TestCaseList[i].TestName.compare(m_Configs.strIrcutName)==0&&m_TestCaseList[i].nTestStatus==2)
+		{
+			nResult|=ITEM_IRCUT_MASK;
+		}
+		else if (m_TestCaseList[i].TestName.compare(m_Configs.strPtzName)==0&&m_TestCaseList[i].nTestStatus==2)
+		{
+			nResult|=ITEM_PTZ_MASK;
+		}
+		else if (m_TestCaseList[i].TestName.compare(m_Configs.strLedName)==0&&m_TestCaseList[i].nTestStatus==2)
+		{
+			nResult|=ITEM_LED_MASK;
+		}
+	}
+	nResult|= 0x8000;
+	strTmp.Format(_T("-s TESTRESULT -v %d"),nResult);
+	nRet = m_DevTest.CommitResult(m_TestSocket,wstr2str(m_Configs.strWriteName),wstr2str((LPCTSTR)strTmp));
+	if (nRet < 0)
+	{
+		strPromt.Format(GetLocalString(_T("IDS_INFO_SAVE_RESULT_FAIL")).c_str(),nRet);
+	}
+}
 void CIPSearchDlg::WritePara()
 {
 	CUidDlg uiddlg;
@@ -1042,7 +1095,7 @@ void CIPSearchDlg::WritePara()
 			{
 				strPrompt.Format(_T("烧写UID.."));
 				AddPrompt(strPrompt);
-				strTmp.Format(_T("UID:%s"),uiddlg.strUid);
+				strTmp.Format(_T("-s UID -v %s"),uiddlg.strUid);
 				nRet = m_DevTest.WriteUidAndLanMac(m_TestSocket,wstr2str(m_Configs.strWriteName),wstr2str((LPCTSTR)strTmp));
 				if (nRet<0)
 				{
@@ -1052,19 +1105,19 @@ void CIPSearchDlg::WritePara()
 				else
 				{
 					strPrompt.Format(_T("烧写UID成功"));
-					AddPrompt(strPrompt,TRUE);
+					AddPrompt(strPrompt);
 				}
 			}
 			if (m_Configs.bWriteMac)
 			{
 				strPrompt.Format(_T("烧写LanMac.."));
 				AddPrompt(strPrompt);
-				strTmp.Format(_T("LANMAC:%s"),uiddlg.strLanmac);
-				m_DevTest.WriteUidAndLanMac(m_TestSocket,wstr2str(m_Configs.strWriteName),wstr2str((LPCTSTR)strTmp));
+				strTmp.Format(_T("-s LANMAC -v %s"),uiddlg.strLanmac);
+				nRet = m_DevTest.WriteUidAndLanMac(m_TestSocket,wstr2str(m_Configs.strWriteName),wstr2str((LPCTSTR)strTmp));
 				if (nRet<0)
 				{
 					strPrompt.Format(_T("烧写LanMac失败,错误码(%d)"),nRet);
-					AddPrompt(strPrompt,TRUE);
+					AddPrompt(strPrompt);
 				}
 				else
 				{
@@ -1081,14 +1134,19 @@ void CIPSearchDlg::OnBnClickedButtonPass()
 	// TODO: Add your control notification handler code here
 	int ret;
 	int i;
-	int nConut=0;
+	int nCount=0;
 	CString strPrompt;
 	std::string strOutput;
+	bool bAllTest = true;
 
-	nConut = m_TestCaseList.size();
+	nCount = m_TestCaseList.size();
 	//1.获取当前测试项，保存测试结果，设置测试状态为已测试
 	for (i=0;i<m_TestCaseList.size();i++)
 	{
+		if (m_TestCaseList[i].nTestStatus == 1&&m_TestCaseList[i].bAuto)
+		{
+			bAllTest = false;
+		}
 		if (m_TestCaseList[i].nTestStatus == 1&&!m_TestCaseList[i].bAuto)
 		{
 			ret = m_DevTest.StopTestItem(m_TestSocket,wstr2str(m_TestCaseList[i].TestName));
@@ -1139,8 +1197,10 @@ void CIPSearchDlg::OnBnClickedButtonPass()
 		}
 	}
 
-	if (nConut==0||(m_TestCaseList[nConut-1].nTestStatus!=0&&m_TestCaseList[nConut-1].nTestStatus!=1))
+	if (bAllTest&&m_TestCaseList[nCount-1].nTestStatus!=0&&m_TestCaseList[nCount-1].nTestStatus!=1)
 	{
+		//保存测试结果
+		SaveTestResult();
 		strPrompt.Format(GetLocalString(_T("IDS_INFO_TEST_OVER")).c_str());
 		AddPrompt(strPrompt);
 		for (i=0;i<m_TestCaseList.size();i++)
@@ -1152,10 +1212,11 @@ void CIPSearchDlg::OnBnClickedButtonPass()
 		}
 		if (i>=m_TestCaseList.size())
 		{
-			//保存测试结果
 			//写号
 			WritePara();
 		}
+		GetDlgItem(IDC_BUTTON_PASS)->EnableWindow(FALSE);
+		GetDlgItem(IDC_BUTTON_FAIL)->EnableWindow(FALSE);
 	}
 }
 
@@ -1166,10 +1227,17 @@ void CIPSearchDlg::OnBnClickedButtonFail()
 	int i,j;
 	std::string strOutput;
 	CString strPrompt;
+	bool bAllTest = true;
+	int nCount = 0;
+	nCount = m_TestCaseList.size();
 	m_bTestPass = false;
 	//获取下一个未测试的测试项
 	for (i=0;i<m_TestCaseList.size();i++)
 	{
+		if (m_TestCaseList[i].nTestStatus == 1&&m_TestCaseList[i].bAuto)
+		{
+			bAllTest = false;
+		}
 		if (m_TestCaseList[i].nTestStatus == 1&&!m_TestCaseList[i].bAuto)
 		{
 			ret = m_DevTest.StopTestItem(m_TestSocket,wstr2str(m_TestCaseList[i].TestName));
@@ -1218,10 +1286,14 @@ void CIPSearchDlg::OnBnClickedButtonFail()
 		}
 	}
 
-	if (m_TestCaseList[m_TestCaseList.size()-1].nTestStatus!=0&&m_TestCaseList[m_TestCaseList.size()-1].nTestStatus!=1)
+	if (bAllTest&&m_TestCaseList[nCount-1].nTestStatus==-1)
 	{
+		//保存测试结果
+		SaveTestResult();
 		strPrompt.Format(GetLocalString(_T("IDS_INFO_TEST_OVER")).c_str());
 		AddPrompt(strPrompt);
+		GetDlgItem(IDC_BUTTON_PASS)->EnableWindow(FALSE);
+		GetDlgItem(IDC_BUTTON_FAIL)->EnableWindow(FALSE);
 	}
 }
 
@@ -1295,4 +1367,60 @@ VOID CIPSearchDlg::WalkMenu(CMenu *pMenu,CString strMainKeyPart)
 			pMenu->ModifyMenu(id, MF_BYCOMMAND, id,m_LocalLan.GetStr((LPCTSTR)strKey).c_str());
 		}
 	}
+}
+
+void CIPSearchDlg::ExitTest()
+{
+	int i,ret;
+	CString strPrompt;
+	for (i=0;i<m_TestCaseList.size();i++)
+	{
+
+		if (m_TestCaseList[i].nTestStatus==1)
+		{
+			ret = m_DevTest.StopTestItem(m_TestSocket,wstr2str(m_TestCaseList[i].TestName));
+			if (ret<0)
+			{
+				strPrompt.Format(GetLocalString(_T("IDS_STOP_TEST_FAIL")).c_str(),GetLocalString(m_TestCaseList[i].TestName).c_str(),ret);
+				AddPrompt(strPrompt,TRUE);
+				m_TestCaseList[i].nTestStatus = -1;
+			}
+		}
+	}
+}
+BOOL CIPSearchDlg::PreTranslateMessage(MSG* pMsg)
+{
+	// TODO: Add your specialized code here and/or call the base class
+	if (pMsg->message==WM_KEYDOWN)
+	{
+		switch (pMsg->wParam)
+		{
+		case VK_F2:
+			//调用按钮对应的事件函数，就同点击按钮相同
+			if(GetDlgItem(ID_BTN_APPLY)->IsWindowEnabled())  
+				OnBnClickedBtnApply();
+			break;
+		case VK_F3:
+			//调用按钮对应的事件函数，就同点击按钮相同
+			if(GetDlgItem(IDC_BUTTON_NEXT)->IsWindowEnabled())  
+				OnBnClickedButtonNext();
+			break;
+		case VK_F4:
+			//调用按钮对应的事件函数，就同点击按钮相同
+			if(GetDlgItem(IDC_BUTTON_PASS)->IsWindowEnabled())  
+				OnBnClickedButtonPass();
+			break;
+		case VK_F5:
+			//调用按钮对应的事件函数，就同点击按钮相同
+			if(GetDlgItem(IDC_BUTTON_FAIL)->IsWindowEnabled())  
+				OnBnClickedButtonFail();
+			break;
+		//case VK_F6:
+		//	//调用按钮对应的事件函数，就同点击按钮相同
+		//	if(GetDlgItem(ID_BTN_APPLY)->IsWindowEnabled())  
+		//		OnBnClickedBtnApply();
+		//	break;
+		}
+	}
+	return CDialog::PreTranslateMessage(pMsg);
 }

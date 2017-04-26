@@ -75,6 +75,7 @@ public:
 	CXListBox   m_listInfo;
 	CLogger     *m_pLog;
 public:
+	void initUi();
 	void GetOtherIp();
 	void initTestCase();
 	std::wstring GetLocalString(std::wstring strKey);
@@ -85,9 +86,11 @@ public:
 	//void RecvThread();
 	int	 connect_dev();
 	void RtspPlay();
+	void ExitTest();
 	void AddPrompt(CString strPrompt,BOOL bError=FALSE,INT iColor = 0);
 	void UpdateTestInfo(std::string strMsg);
 	void WritePara();
+	void SaveTestResult();
 	BOOL LoadConfig();
 	VOID WalkMenu(CMenu *pMenu,CString strMainKeyPart);
 public:
@@ -101,4 +104,5 @@ public:
 	afx_msg void OnBnClickedButtonPass();
 	afx_msg void OnBnClickedButtonFail();
 	afx_msg void OnClose();
+	virtual BOOL PreTranslateMessage(MSG* pMsg);
 };

@@ -1,6 +1,36 @@
 #include "stdafx.h"
 #include "PcbaTest .h"
 #include "c_socket.h"
+#include "scriptexe.h"
+
+// Convert wstring to string
+static std::string wstr2str(const std::wstring& arg)
+{
+	int requiredSize;
+	requiredSize = WideCharToMultiByte(CP_ACP,0,arg.c_str(),arg.length(),NULL,0,NULL,NULL);
+	std::string res;
+	if (requiredSize<=0) {
+		res = "";
+		return res;
+	}
+	res.assign(requiredSize,'\0');
+	WideCharToMultiByte(CP_ACP,0,arg.c_str(),arg.length(),const_cast<char*>(res.data()),requiredSize,NULL,NULL);
+	return res;
+}
+// Convert string to wstring
+static std::wstring str2wstr(const std::string& arg)
+{
+	int requiredSize;
+	requiredSize = MultiByteToWideChar(CP_ACP,0,arg.c_str(),arg.length(),NULL,0);
+	std::wstring res;
+	if (requiredSize<=0) {
+		res = L"";
+		return res;
+	}
+	res.assign(requiredSize,L'\0');
+	MultiByteToWideChar(CP_ACP,0,arg.c_str(),arg.length(),const_cast<wchar_t *>(res.data()),requiredSize);
+	return res;
+}
 
 CPcbaTest::CPcbaTest():m_pLogger(NULL)
 {
@@ -24,13 +54,13 @@ int CPcbaTest::EnterTestMode(SOCKET TestSocket)
 	}
 
 	//2.读取设备端返回的结果，确定成功与否，成功返回{"TYPE":"RES", "RES":"ENTER", "STATUS":"ACK"}
-	socket_read(TestSocket,strMsg);
-	LOGER((CLogger::DEBUG_DUT,"recv_msg%s\r\n",strMsg.c_str()));
-	if (ret < 0)
+	ret = socket_read(TestSocket,strMsg);
+	if (ret <= 0)
 	{
 		LOGER((CLogger::DEBUG_DUT,"socket:recv data failed\r\n"));
 		return -2;
 	}
+	LOGER((CLogger::DEBUG_DUT,"recv_msg%s\r\n",strMsg.c_str()));
 	m_Json.JsontoItem("RES",strRes,strMsg);
 	m_Json.JsontoItem("STATUS",strSta,strMsg);
 	m_Json.JsontoItem("ERR_CODE",strErrCode,strMsg);
@@ -65,13 +95,13 @@ int CPcbaTest::ExitTest(SOCKET TestSocket)
 	}
 
 	//2.读取设备端返回的结果，确定成功与否，成功返回{"TYPE":"RES", "RES":"EXIT"，"STATUS":"ACK"}
-	socket_read(TestSocket,strMsg);
-	LOGER((CLogger::DEBUG_DUT,"recv_msg:%s\n",strMsg.c_str()));
+	ret = socket_read(TestSocket,strMsg);
 	if (ret < 0)
 	{
 		LOGER((CLogger::DEBUG_DUT,"socket:recv data failed\r\n"));
 		return -2;
 	}
+	LOGER((CLogger::DEBUG_DUT,"recv_msg:%s\n",strMsg.c_str()));
 	m_Json.JsontoItem("RES",strRes,strMsg);
 	m_Json.JsontoItem("STATUS",strSta,strMsg);
 	m_Json.JsontoItem("ERR_CODE",strErrCode,strMsg);
@@ -91,13 +121,11 @@ int CPcbaTest::StartTestItem(SOCKET TestSocket,std::string TestName)
 	std::string strMsg,strSta,strRes,strTestItem,strErrCode;
 	int ret,nErrCode;
 
-
-	//int n =5;
-	//while (n--)
-	//{
-	//	Sleep(1000);
-	//}
-
+	ret = UploadFile(TestName);
+	if (ret < 0)
+	{
+		return -1;
+	}
 	LOGER((CLogger::DEBUG_DUT,"StartTestItem()"));
 
 	//1.发送命令给设备端开始测试 {"TYPE":"CMD", "TEST ITEM":"KEY-TEST", "CMD":"START" }
@@ -107,22 +135,22 @@ int CPcbaTest::StartTestItem(SOCKET TestSocket,std::string TestName)
 	if (ret < 0)
 	{
 		LOGER((CLogger::DEBUG_DUT,"%s:socket:send data failed\r\n",TestName.c_str()));
-		return -1;
+		return -2;
 	}
 
 	//2.读取设备端返回的结果，确定成功与否，成功返回{"TYPE":"RES", "TEST ITEM":"KEY-TEST", "RES":"START", "STATUS":"ACK"}
-	socket_read(TestSocket,strMsg);
-	LOGER((CLogger::DEBUG_DUT,"recv msg:%s\n",strMsg.c_str()));
-	if (ret < 0)
+	ret = socket_read(TestSocket,strMsg);
+	if (ret <= 0)
 	{
-		LOGER((CLogger::DEBUG_DUT,"%s:recv data failed\r\n",strMsg.c_str()));
-		return -2;
+		LOGER((CLogger::DEBUG_DUT,"recv data failed\r\n"));
+		return -3;
 	}
+	LOGER((CLogger::DEBUG_DUT,"recv msg:%s\n",strMsg.c_str()));
 	m_Json.JsontoItem("RES",strRes,"STATUS",strSta,"TEST_ITEM",strTestItem,strMsg);
 	m_Json.JsontoItem("ERR_CODE",strErrCode,strMsg);
 	if (stringCompareIgnoreCase(strRes,"START")||stringCompareIgnoreCase(strTestItem,TestName))
 	{
-		return -3;
+		return -4;
 	}
 	if (!stringCompareIgnoreCase(strSta,"NAK"))
 	{
@@ -155,12 +183,12 @@ int CPcbaTest::QueryTestItem(SOCKET TestSocket,std::string TestName,std::string 
 
 	//2.读取设备端返回的结果，确定成功与否，成功返回{"TYPE":"RES", "TEST_ITEM":"test_item", "RES":"QUERY", "MSG":"msg", "STATUS":"ACK", "RESULT":"PASS"}
 	ret = socket_read(TestSocket,strMsg);
-	LOGER((CLogger::DEBUG_DUT,"recv_msg:%s",strMsg.c_str()));
 	if (ret <= 0)
 	{
 		LOGER((CLogger::DEBUG_DUT,"%s:recv data failed\r\n",TestName.c_str()));
 		return -2;
 	}
+	LOGER((CLogger::DEBUG_DUT,"recv_msg:%s",strMsg.c_str()));
 	m_Json.JsontoItem("RES",strRes,"STATUS",strSta,"TEST_ITEM",strTestItem,"RESULT",strResult,strMsg);
 	m_Json.JsontoItem("ERR_CODE",strErrCode,strMsg);
 	if (stringCompareIgnoreCase(strRes,"QUERY")||stringCompareIgnoreCase(strTestItem,TestName))
@@ -183,7 +211,7 @@ int CPcbaTest::QueryTestItem(SOCKET TestSocket,std::string TestName,std::string 
 	return 0;
 }
 
-int CPcbaTest::CommitResult(SOCKET TestSocket,std::string TestName,bool bPass)
+int CPcbaTest::CommitResult(SOCKET TestSocket,std::string TestName,std::string strResult)
 {
 	std::string strMsg,strSta,strRes,strTestItem,strErrCode;
 	int ret,nErrCode;
@@ -191,33 +219,27 @@ int CPcbaTest::CommitResult(SOCKET TestSocket,std::string TestName,bool bPass)
 	LOGER((CLogger::DEBUG_DUT,"CommitResult()"));
 
 	//1.发送命令给设备端保存测试结果 {"TYPE":"CMD", "TEST_ITEM":"test_item", "CMD":"SAVE" }
-	if (bPass)
-	{
-		m_Json.ItemtoJson("TYPE","CMD","TEST_ITEM",TestName,"CMD","SAVE",strMsg);
-	}
-	else
-	{
-		m_Json.ItemtoJson("TYPE","CMD","TEST_ITEM",TestName,"CMD","SAVE",strMsg);
-	}
+
+	m_Json.ItemtoJson("TYPE","CMD","TEST_ITEM",TestName,"MSG",strResult,"CMD","START",strMsg);
 	LOGER((CLogger::DEBUG_DUT,"send_msg:%s",strMsg.c_str()));
 	ret = socket_write(TestSocket,strMsg);
 	if (ret < 0)
 	{
-		LOGER((CLogger::DEBUG_DUT,"%s:socket:send data failed\r\n",TestName));
+		LOGER((CLogger::DEBUG_DUT,"socket:send data failed\r\n"));
 		return -1;
 	}
 
 	//2.读取设备端返回的结果，确定成功与否，成功返回{"TYPE":"RES", "TEST_ITEM":"test_item", "RES":"SAVE", "STATUS":"ACK"}
-	socket_read(TestSocket,strMsg);
-	LOGER((CLogger::DEBUG_DUT,"recv_msg:%s\n",strMsg.c_str()));
-	if (ret < 0)
+	ret = socket_read(TestSocket,strMsg);
+	if (ret <= 0)
 	{
-		LOGER((CLogger::DEBUG_DUT,"%s:recv data failed\r\n",strMsg.c_str()));
+		LOGER((CLogger::DEBUG_DUT,"recv data failed\r\n"));
 		return -2;
 	}
+	LOGER((CLogger::DEBUG_DUT,"recv_msg:%s\n",strMsg.c_str()));
 	m_Json.JsontoItem("RES",strRes,"STATUS",strSta,"TEST_ITEM",strTestItem,strMsg);
 	m_Json.JsontoItem("ERR_CODE",strErrCode,strMsg);
-	if (stringCompareIgnoreCase(strRes,"SAVE")||stringCompareIgnoreCase(strTestItem,TestName))
+	if (stringCompareIgnoreCase(strRes,"START"))
 	{
 		return -3;
 	}
@@ -245,15 +267,14 @@ int CPcbaTest::StopTestItem(SOCKET TestSocket,std::string TestName)
 		LOGER((CLogger::DEBUG_DUT,"%s:socket:send data failed\r\n",TestName));
 		return -1;
 	}
-
 	//2.读取设备端返回的结果，确定成功与否，成功返回{"TYPE":"RES", "TEST_ITEM":"test_item", "RES":"STOP", "STATUS":"ACK"}
-	socket_read(TestSocket,strMsg);
-	LOGER((CLogger::DEBUG_DUT,"recv_msg:%s\n",strMsg.c_str()));
-	if (ret < 0)
+	ret = socket_read(TestSocket,strMsg);
+	if (ret <= 0)
 	{
-		LOGER((CLogger::DEBUG_DUT,"%s:recv data failed\r\n",strMsg.c_str()));
+		LOGER((CLogger::DEBUG_DUT,"recv data failed\r\n"));
 		return -2;
 	}
+	LOGER((CLogger::DEBUG_DUT,"recv_msg:%s\n",strMsg.c_str()));
 	m_Json.JsontoItem("RES",strRes,"STATUS",strSta,"TEST_ITEM",strTestItem,strMsg);
 	m_Json.JsontoItem("ERR_CODE",strErrCode,strMsg);
 	if (stringCompareIgnoreCase(strRes,"STOP")||stringCompareIgnoreCase(strTestItem,TestName))
@@ -276,6 +297,12 @@ int CPcbaTest::WriteUidAndLanMac(SOCKET TestSocket,std::string TestName,std::str
 
 	LOGER((CLogger::DEBUG_DUT,"WriteUidAndLanMac()"));
 
+	ret = UploadFile(TestName);
+	if (ret < 0)
+	{
+		return -1;
+	}
+
 	//1.发送命令给设备端开始测试 {"TYPE":"CMD", "TEST ITEM":"WRITE_TEST", "CMD":"START" }
 	m_Json.ItemtoJson("TYPE","CMD","TEST_ITEM",TestName,"MSG",strWriteMsg,"CMD","START",strMsg);
 	LOGER((CLogger::DEBUG_DUT,"send_msg:%s",strMsg.c_str()));
@@ -283,63 +310,63 @@ int CPcbaTest::WriteUidAndLanMac(SOCKET TestSocket,std::string TestName,std::str
 	if (ret < 0)
 	{
 		LOGER((CLogger::DEBUG_DUT,"%s:socket:send data failed\r\n",TestName));
-		return -1;
+		return -2;
 	}
 
 	//2.读取设备端返回的结果，确定成功与否，成功返回{"TYPE":"RES", "TEST ITEM":"KEY-TEST", "RES":"START", "STATUS":"ACK"}
-	socket_read(TestSocket,strMsg);
-	LOGER((CLogger::DEBUG_DUT,"recv_msg:%s\n",strMsg.c_str()));
-	if (ret < 0)
+	ret = socket_read(TestSocket,strMsg);
+	if (ret <= 0)
 	{
 		LOGER((CLogger::DEBUG_DUT,"%s:recv data failed\r\n",strMsg));
-		return -2;
+		return -3;
 	}
+	LOGER((CLogger::DEBUG_DUT,"recv_msg:%s\n",strMsg.c_str()));
 	m_Json.JsontoItem("RES",strRes,"STATUS",strSta,"TEST_ITEM",strTestItem,strMsg);
 	m_Json.JsontoItem("ERR_CODE",strErrCode,strMsg);
 	if (stringCompareIgnoreCase(strRes,"START")||stringCompareIgnoreCase(strTestItem,TestName))
 	{
-		return -3;
+		return -4;
 	}
 	if (!stringCompareIgnoreCase(strSta,"NAK"))
 	{
 		return -atoi(strErrCode.c_str());
 	}
-	while(n--)
-	{
-		//3.发送命令给设备端查询测试状态 {"TYPE":"CMD", "TEST_ITEM":"test_item", "CMD":"QUERY" }
-		m_Json.ItemtoJson("TYPE","CMD","TEST_ITEM",TestName,"CMD","QUERY",strMsg);
-		LOGER((CLogger::DEBUG_DUT,"send_msg:%s\r\n",strMsg.c_str()));
-		ret = socket_write(TestSocket,strMsg);
-		if (ret < 0)
-		{
-			LOGER((CLogger::DEBUG_DUT,"%s:socket:send data failed\r\n",TestName.c_str()));
-			return -4;
-		}
+	//while(n--)
+	//{
+	//	//3.发送命令给设备端查询测试状态 {"TYPE":"CMD", "TEST_ITEM":"test_item", "CMD":"QUERY" }
+	//	m_Json.ItemtoJson("TYPE","CMD","TEST_ITEM",TestName,"CMD","QUERY",strMsg);
+	//	LOGER((CLogger::DEBUG_DUT,"send_msg:%s\r\n",strMsg.c_str()));
+	//	ret = socket_write(TestSocket,strMsg);
+	//	if (ret < 0)
+	//	{
+	//		LOGER((CLogger::DEBUG_DUT,"%s:socket:send data failed\r\n",TestName.c_str()));
+	//		return -5;
+	//	}
 
-		//4.读取设备端返回的结果，确定成功与否，成功返回{"TYPE":"RES", "TEST_ITEM":"test_item", "RES":"QUERY", "MSG":"msg", "STATUS":"ACK", "RESULT":"PASS"}
-		socket_read(TestSocket,strMsg);
-		LOGER((CLogger::DEBUG_DUT,"recv_msg:%s\n",strMsg.c_str()));
-		if (ret < 0)
-		{
-			LOGER((CLogger::DEBUG_DUT,"%s:recv data failed\r\n",strMsg.c_str()));
-			return -5;
-		}
-		m_Json.JsontoItem("RES",strRes,"STATUS",strSta,"TEST_ITEM",strTestItem,"RESULT",strResult,strMsg);
-		m_Json.JsontoItem("ERR_CODE",strErrCode,strMsg);
-		if (stringCompareIgnoreCase(strRes,"START")||stringCompareIgnoreCase(strTestItem,TestName))
-		{
-			return -6;
-		}
-		if (!stringCompareIgnoreCase(strSta,"NAK")||!stringCompareIgnoreCase(strResult,"FAIL"))
-		{
-			return -atoi(strErrCode.c_str());
-		}
-		if (!stringCompareIgnoreCase(strResult,"PASS"))
-		{
-			break;
-		}
-		Sleep(500);
-	}
+	//	//4.读取设备端返回的结果，确定成功与否，成功返回{"TYPE":"RES", "TEST_ITEM":"test_item", "RES":"QUERY", "MSG":"msg", "STATUS":"ACK", "RESULT":"PASS"}
+	//	socket_read(TestSocket,strMsg);
+	//	LOGER((CLogger::DEBUG_DUT,"recv_msg:%s\n",strMsg.c_str()));
+	//	if (ret < 0)
+	//	{
+	//		LOGER((CLogger::DEBUG_DUT,"%s:recv data failed\r\n",strMsg.c_str()));
+	//		return -6;
+	//	}
+	//	m_Json.JsontoItem("RES",strRes,"STATUS",strSta,"TEST_ITEM",strTestItem,"RESULT",strResult,strMsg);
+	//	m_Json.JsontoItem("ERR_CODE",strErrCode,strMsg);
+	//	if (stringCompareIgnoreCase(strRes,"START")||stringCompareIgnoreCase(strTestItem,TestName))
+	//	{
+	//		return -7;
+	//	}
+	//	if (!stringCompareIgnoreCase(strSta,"NAK")||!stringCompareIgnoreCase(strResult,"FAIL"))
+	//	{
+	//		return -atoi(strErrCode.c_str());
+	//	}
+	//	if (!stringCompareIgnoreCase(strResult,"PASS"))
+	//	{
+	//		break;
+	//	}
+	//	Sleep(500);
+	//}
 	return 0;
 }
 
@@ -377,6 +404,30 @@ int CPcbaTest::KeyTest(SOCKET TestSocket,std::string TestName,std::string &strOu
 			return ret;
 		}
 		Sleep(1000);
+	}
+	return 0;
+}
+
+int CPcbaTest::UploadFile(std::string strFileName)
+{
+	CSpawn					ShellSpawn;
+	wchar_t     strCmd[2600] = {0};  
+
+	LOGER((CLogger::DEBUG_DUT,"UploadFile()\n"));
+	//tftp.exe -i 172.16.14.62 put test_ftp.txt
+	swprintf(strCmd,nof(strCmd),TEXT("tftp.exe -i %s put %s%s"),m_strIp.c_str(),m_strTestPath.c_str(),str2wstr(strFileName).c_str());
+	if(ShellSpawn.Exe(strCmd,2500, true)) 
+	{
+		if(0 != ShellSpawn.GetResult()) 
+		{
+			LOGER((CLogger::DEBUG_DUT,"tftp file error strCmd=%s\n",wstr2str(strCmd).c_str()));
+			return -1;
+		}
+	}
+	else
+	{
+		LOGER((CLogger::DEBUG_DUT,"tftp file error strCmd=%s\n",wstr2str(strCmd).c_str()));
+		return -2;
 	}
 	return 0;
 }

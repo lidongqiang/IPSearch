@@ -168,6 +168,7 @@ public:
 	std::wstring strIrcutName;
 	std::wstring strWriteName;
 	std::wstring strLogPath;
+	std::wstring strTestPath;
 	int			nLogLevel;
 
 	bool bSdcardTest;
