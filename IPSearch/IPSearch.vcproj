@@ -341,6 +341,26 @@
 				>
 			</File>
 			<File
+				RelativePath=".\res\4.ico"
+				>
+			</File>
+			<File
+				RelativePath=".\res\ip.bmp"
+				>
+			</File>
+			<File
+				RelativePath=".\res\IPCamera.bmp"
+				>
+			</File>
+			<File
+				RelativePath=".\res\IPCamera.jpg"
+				>
+			</File>
+			<File
+				RelativePath=".\res\IPCamera1.bmp"
+				>
+			</File>
+			<File
 				RelativePath=".\res\IPSearch.ico"
 				>
 			</File>
@@ -354,6 +374,10 @@
 			</File>
 			<File
 				RelativePath=".\res\logo.bmp"
+				>
+			</File>
+			<File
+				RelativePath=".\res\timg.bmp"
 				>
 			</File>
 		</Filter>
@@ -394,6 +418,18 @@
 			</File>
 			<File
 				RelativePath=".\XListBox\XListBox.h"
+				>
+			</File>
+		</Filter>
+		<Filter
+			Name="Label"
+			>
+			<File
+				RelativePath=".\label\Label.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\label\Label.h"
 				>
 			</File>
 		</Filter>

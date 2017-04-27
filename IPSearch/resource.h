@@ -21,6 +21,12 @@
 #define IDI_ICON1                       138
 #define IDR_MAINFRAME1                  138
 #define IDB_BITMAP_LOGO                 140
+#define IDR_MAINMENU                    141
+#define IDR_MAINFRAME3                  142
+#define IDB_PNG1                        145
+#define IDB_BITMAP1                     146
+#define IDB_BITMAP2                     150
+#define IDB_BITMAP3                     151
 #define ID_BTN_SERCH                    1001
 #define IDC_LIST_DEVICE                 1002
 #define IDC_EDIT_IP                     1003
@@ -81,18 +87,25 @@
 #define IDC_STATIC_TESTITEM             1049
 #define IDC_STATIC_WRITEITEM            1050
 #define IDC_EDIT10                      1051
+#define IDC_STATIC_APPNAME              1051
+#define IDC_STATIC_RK                   1052
+#define IDC_STATIC_ICO                  1053
 #define IDC_COMBO3                      1054
 #define IDC_EDIT11                      1055
 #define IDC_EDIT12                      1056
 #define IDC_EDIT13                      1057
+#define ID_ABOUT_VERSION                32771
+#define ID_ABOUT_LANGUAGE               32772
+#define ID_HELP_ABOUT                   32773
+#define ID_HELP_LANGUAGE                32774
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        141
-#define _APS_NEXT_COMMAND_VALUE         32771
-#define _APS_NEXT_CONTROL_VALUE         1051
+#define _APS_NEXT_RESOURCE_VALUE        152
+#define _APS_NEXT_COMMAND_VALUE         32775
+#define _APS_NEXT_CONTROL_VALUE         1054
 #define _APS_NEXT_SYMED_VALUE           108
 #endif
 #endif

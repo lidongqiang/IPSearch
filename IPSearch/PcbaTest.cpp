@@ -70,7 +70,7 @@ int CPcbaTest::EnterTestMode(SOCKET TestSocket)
 	}
 	if (!stringCompareIgnoreCase(strSta,"NAK"))
 	{
-		return -atoi(strErrCode.c_str());
+		return atoi(strErrCode.c_str());
 	}
 
 	//3.读取当前设备端的模式，是否已经进入测试模式
@@ -111,7 +111,7 @@ int CPcbaTest::ExitTest(SOCKET TestSocket)
 	}
 	if (!stringCompareIgnoreCase(strSta,"NAK"))
 	{
-		return -atoi(strErrCode.c_str());
+		return atoi(strErrCode.c_str());
 	}
 	return 0;
 }
@@ -129,7 +129,7 @@ int CPcbaTest::StartTestItem(SOCKET TestSocket,std::string TestName)
 	LOGER((CLogger::DEBUG_DUT,"StartTestItem()"));
 
 	//1.发送命令给设备端开始测试 {"TYPE":"CMD", "TEST ITEM":"KEY-TEST", "CMD":"START" }
-	m_Json.ItemtoJson("TYPE","CMD","TEST_ITEM",TestName,"CMD","START",/*"MSG","msg",*/strMsg);
+	m_Json.ItemtoJson("TYPE","CMD","TEST_ITEM",TestName,"CMD","START",strMsg);
 	LOGER((CLogger::DEBUG_DUT,"send msg:%s",strMsg.c_str()));
 	ret = socket_write(TestSocket,strMsg);
 	if (ret < 0)
@@ -154,7 +154,7 @@ int CPcbaTest::StartTestItem(SOCKET TestSocket,std::string TestName)
 	}
 	if (!stringCompareIgnoreCase(strSta,"NAK"))
 	{
-		return -atoi(strErrCode.c_str());
+		return atoi(strErrCode.c_str());
 	}
 	return 0;
 }
@@ -197,7 +197,7 @@ int CPcbaTest::QueryTestItem(SOCKET TestSocket,std::string TestName,std::string 
 	}
 	if (!stringCompareIgnoreCase(strSta,"NAK")||!stringCompareIgnoreCase(strResult,"FAIL"))
 	{
-		return -atoi(strErrCode.c_str());
+		return atoi(strErrCode.c_str());
 	}
 	if (!stringCompareIgnoreCase(strResult,"PASS"))
 	{
@@ -245,7 +245,7 @@ int CPcbaTest::CommitResult(SOCKET TestSocket,std::string TestName,std::string s
 	}
 	if (!stringCompareIgnoreCase(strSta,"NAK"))
 	{
-		return -atoi(strErrCode.c_str());
+		return atoi(strErrCode.c_str());
 	}
 	return 0;
 }
@@ -283,7 +283,7 @@ int CPcbaTest::StopTestItem(SOCKET TestSocket,std::string TestName)
 	}
 	if (!stringCompareIgnoreCase(strSta,"NAK"))
 	{
-		return -atoi(strErrCode.c_str());
+		return atoi(strErrCode.c_str());
 	}
 	return 0;
 }
@@ -329,7 +329,7 @@ int CPcbaTest::WriteUidAndLanMac(SOCKET TestSocket,std::string TestName,std::str
 	}
 	if (!stringCompareIgnoreCase(strSta,"NAK"))
 	{
-		return -atoi(strErrCode.c_str());
+		return atoi(strErrCode.c_str());
 	}
 	//while(n--)
 	//{

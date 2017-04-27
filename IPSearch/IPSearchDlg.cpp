@@ -9,6 +9,7 @@
 #include "Winnetwk.h"
 #include "c_socket.h"
 #include "cmd_process.h"
+#include "./label/Label.h"
 #include "cmFile.h"
 #include "UidDlg.h"
 #include <iostream>
@@ -71,8 +72,12 @@ UINT RecvDeviceThread(LPVOID lpParam)
 class CAboutDlg : public CDialog
 {
 public:
-	CAboutDlg();
-
+	CAboutDlg(CIniSettingBase &Configs,CIniLocalLan &LocalLang);
+private:
+	CLabel          m_rklink;
+	CLabel          m_AppName;
+	CIniSettingBase &m_Configs;
+	CIniLocalLan    &m_LocalLang;
 // 对话框数据
 	enum { IDD = IDD_ABOUTBOX };
 
@@ -82,15 +87,44 @@ public:
 // 实现
 protected:
 	DECLARE_MESSAGE_MAP()
+public:
+	virtual BOOL OnInitDialog();
+	afx_msg void OnBnClickedOk();
+	std::wstring GetLocalString(std::wstring strKey)
+	{
+		return m_LocalLang.GetLanStr(strKey);
+	}
 };
 
-CAboutDlg::CAboutDlg() : CDialog(CAboutDlg::IDD)
+CAboutDlg::CAboutDlg(CIniSettingBase &Configs,CIniLocalLan &LocalLang) : CDialog(CAboutDlg::IDD)
+	 ,m_Configs(Configs),m_LocalLang(LocalLang)
 {
+}
+
+BOOL CAboutDlg::OnInitDialog()
+{
+	CDialog::OnInitDialog();
+	m_rklink.SetTransparent(TRUE);
+	m_rklink.SetFontSize(8);
+	m_rklink.SetFontBold(TRUE);
+	m_rklink.SetText(TEXT("福州瑞芯微电子有限公司"), 0xFF1111);
+	m_rklink.SetLink(TRUE,FALSE);
+	m_rklink.SetHyperLink(CString(TEXT("http://www.rock-chips.com/")));
+	/*m_rklink.SetLinkCursor( (HCURSOR)IDC_IBEAM); **/
+	/*m_rklink.FlashText(TRUE);**/
+	m_AppName.SetTransparent(TRUE);
+	m_AppName.SetFontSize(8);
+	m_AppName.SetFontBold(TRUE);
+	m_AppName.SetText((GetLocalString(TEXT("IDS_TEXT_APPNAME"))+ TEXT(APP_VERSION)).c_str(), 0xFF1111);
+	/*GetDlgItem(IDC_STATIC_APPNAME)->SetWindowText((m_LocalLang.GetStr(TEXT("APPNAME")) + TEXT(APP_VERSION)).c_str());**/
+	return FALSE;
 }
 
 void CAboutDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialog::DoDataExchange(pDX);
+	DDX_Control(pDX, IDC_STATIC_RK, m_rklink);
+	DDX_Control(pDX, IDC_STATIC_APPNAME, m_AppName);
 }
 
 BEGIN_MESSAGE_MAP(CAboutDlg, CDialog)
@@ -105,7 +139,7 @@ END_MESSAGE_MAP()
 CIPSearchDlg::CIPSearchDlg(CWnd* pParent /*=NULL*/)
 	: CDialog(CIPSearchDlg::IDD, pParent),m_listSelect(-1),m_bRun(false),m_bTestPass(false)
 {
-	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME1);
+	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME3);
 }
 
 void CIPSearchDlg::DoDataExchange(CDataExchange* pDX)
@@ -130,6 +164,7 @@ BEGIN_MESSAGE_MAP(CIPSearchDlg, CDialog)
 	ON_BN_CLICKED(IDC_BUTTON_PASS, &CIPSearchDlg::OnBnClickedButtonPass)
 	ON_BN_CLICKED(IDC_BUTTON_FAIL, &CIPSearchDlg::OnBnClickedButtonFail)
 	ON_WM_CLOSE()
+	ON_COMMAND(ID_HELP_ABOUT, &CIPSearchDlg::OnHelpAbout)
 END_MESSAGE_MAP()
 
 
@@ -320,7 +355,7 @@ void CIPSearchDlg::OnSysCommand(UINT nID, LPARAM lParam)
 {
 	if ((nID & 0xFFF0) == IDM_ABOUTBOX)
 	{
-		CAboutDlg dlgAbout;
+		CAboutDlg dlgAbout(m_Configs,m_LocalLan);
 		dlgAbout.DoModal();
 	}
 	else
@@ -591,7 +626,7 @@ void CIPSearchDlg::OnBnClickedButtonTest()
 		m_cAVPlayer.Stop();
 		this->SetDlgItemText(IDC_BUTTON_TEST,GetLocalString(_T("START")).c_str());
 		GetDlgItem(ID_BTN_APPLY)->EnableWindow(TRUE);
-		AddPrompt(GetLocalString(_T("IDS_INFO_USER_ABORT")).c_str(),TRUE);
+		//AddPrompt(GetLocalString(_T("IDS_INFO_USER_ABORT")).c_str(),TRUE);
 	}
 	else
 	{
@@ -647,6 +682,8 @@ void CIPSearchDlg::RtspPlay()
 		"--network-caching=500",  
 		"--rtsp-tcp",  
 	};
+	//m_DevTest.StartTestItem(m_TestSocket)
+
 	CString strUrl;
 	strUrl.Format(_T("rtsp://%s/webcam"),m_strIp);
 	m_cAVPlayer.Play(wstr2str((LPCTSTR)strUrl));
@@ -1423,4 +1460,11 @@ BOOL CIPSearchDlg::PreTranslateMessage(MSG* pMsg)
 		}
 	}
 	return CDialog::PreTranslateMessage(pMsg);
+}
+
+void CIPSearchDlg::OnHelpAbout()
+{
+	// TODO: Add your command handler code here
+	CAboutDlg dlgAbout(m_Configs,m_LocalLan);
+	dlgAbout.DoModal();
 }

@@ -105,4 +105,5 @@ public:
 	afx_msg void OnBnClickedButtonFail();
 	afx_msg void OnClose();
 	virtual BOOL PreTranslateMessage(MSG* pMsg);
+	afx_msg void OnHelpAbout();
 };
