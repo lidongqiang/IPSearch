@@ -303,6 +303,7 @@ bool CIniSettingBase::LoadToolSetting(std::wstring strConfig)
 	strInterphoneName	= GetStr(TEXT("InterphoneName"));
 	strPtzName			= GetStr(TEXT("PtzName"));
 	strIrcutName		= GetStr(TEXT("IrcutName"));
+	strCameraName		= GetStr(TEXT("CameraName"));
 	strLedName			= GetStr(TEXT("LedName"));
 	strWriteName		= GetStr(TEXT("WriteName"));
 	strLogPath              = GetStr(TEXT("LogPath"));

@@ -166,6 +166,7 @@ public:
 	std::wstring strPtzName;
 	std::wstring strLedName;
 	std::wstring strIrcutName;
+	std::wstring strCameraName;
 	std::wstring strWriteName;
 	std::wstring strLogPath;
 	std::wstring strTestPath;

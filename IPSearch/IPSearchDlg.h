@@ -93,6 +93,7 @@ public:
 	void SaveTestResult();
 	BOOL LoadConfig();
 	VOID WalkMenu(CMenu *pMenu,CString strMainKeyPart);
+	int DoTestItem(std::wstring strTestName,std::string &strInfo);
 public:
 	afx_msg void OnBnClickedBtnSerch();
 	afx_msg void OnBnClickedButtonTest();
@@ -106,4 +107,5 @@ public:
 	afx_msg void OnClose();
 	virtual BOOL PreTranslateMessage(MSG* pMsg);
 	afx_msg void OnHelpAbout();
+	afx_msg void OnBnClickedButtonExit();
 };

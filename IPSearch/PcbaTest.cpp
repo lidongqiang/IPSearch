@@ -116,7 +116,7 @@ int CPcbaTest::ExitTest(SOCKET TestSocket)
 	return 0;
 }
 
-int CPcbaTest::StartTestItem(SOCKET TestSocket,std::string TestName)
+int CPcbaTest::StartTestItem(SOCKET TestSocket,std::string TestName,std::string Msg)
 {
 	std::string strMsg,strSta,strRes,strTestItem,strErrCode;
 	int ret,nErrCode;
@@ -129,7 +129,7 @@ int CPcbaTest::StartTestItem(SOCKET TestSocket,std::string TestName)
 	LOGER((CLogger::DEBUG_DUT,"StartTestItem()"));
 
 	//1.发送命令给设备端开始测试 {"TYPE":"CMD", "TEST ITEM":"KEY-TEST", "CMD":"START" }
-	m_Json.ItemtoJson("TYPE","CMD","TEST_ITEM",TestName,"CMD","START",strMsg);
+	m_Json.ItemtoJson("TYPE","CMD","TEST_ITEM",TestName,"CMD","START","MSG",Msg,strMsg);
 	LOGER((CLogger::DEBUG_DUT,"send msg:%s",strMsg.c_str()));
 	ret = socket_write(TestSocket,strMsg);
 	if (ret < 0)
@@ -430,4 +430,42 @@ int CPcbaTest::UploadFile(std::string strFileName)
 		return -2;
 	}
 	return 0;
+}
+
+int CPcbaTest::MonitorTest(SOCKET TestSocket,std::string TestName)
+{
+	return StartTestItem(TestSocket,TestName,"-c record");
+}
+
+int CPcbaTest::InterphoneTest(SOCKET TestSocket,std::string TestName)
+{
+	return StartTestItem(TestSocket,TestName,"-c play");
+}
+int CPcbaTest::SdCardTest(SOCKET TestSocket,std::string TestName)
+{
+	return StartTestItem(TestSocket,TestName);
+}
+int CPcbaTest::IrcutTest(SOCKET TestSocket,std::string TestName)
+{
+	return StartTestItem(TestSocket,TestName);
+}
+int CPcbaTest::LedTest(SOCKET TestSocket,std::string TestName)
+{
+	return StartTestItem(TestSocket,TestName);
+}
+int CPcbaTest::PtzTest(SOCKET TestSocket,std::string TestName)
+{
+	return StartTestItem(TestSocket,TestName);
+}
+int CPcbaTest::WifiTest(SOCKET TestSocket,std::string TestName)
+{
+	return StartTestItem(TestSocket,TestName);
+}
+int CPcbaTest::CameraTest(SOCKET TestSocket,std::string TestName)
+{
+	return StartTestItem(TestSocket,TestName);
+}
+int CPcbaTest::StopCamera(SOCKET TestSocket,std::string TestName)
+{
+	return StopTestItem(TestSocket,TestName);
 }

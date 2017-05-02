@@ -1,5 +1,5 @@
 #pragma once
-
+#include "settings/SettingBase.h"
 
 // CUidDlg dialog
 
@@ -8,7 +8,7 @@ class CUidDlg : public CDialog
 	DECLARE_DYNAMIC(CUidDlg)
 
 public:
-	CUidDlg(CWnd* pParent = NULL);   // standard constructor
+	CUidDlg(CIniSettingBase &Configs,CIniLocalLan &LocalLang,CWnd* pParent = NULL);   // standard constructor
 	virtual ~CUidDlg();
 
 // Dialog Data
@@ -22,5 +22,9 @@ protected:
 
 	DECLARE_MESSAGE_MAP()
 public:
+	CIniSettingBase &m_Configs;
+	CIniLocalLan    &m_LocalLang;
+public:
 	afx_msg void OnBnClickedOk();
+	virtual BOOL OnInitDialog();
 };

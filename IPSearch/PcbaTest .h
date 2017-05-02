@@ -73,7 +73,7 @@ public:
 	int UploadFile(std::string strFileName);
 	int EnterTestMode(SOCKET TestSocket);
 	int ExitTest(SOCKET TestSocket);
-	int StartTestItem(SOCKET TestSocket,std::string TestName);
+	int StartTestItem(SOCKET TestSocket,std::string TestName,std::string Msg="");
 	int QueryTestItem(SOCKET TestSocket,std::string TestName,std::string &strOutput);
 	int CommitResult(SOCKET TestSocket,std::string TestName,std::string strResult);
 	int StopTestItem(SOCKET TestSocket,std::string TestName);
@@ -81,6 +81,16 @@ public:
 	int WriteUid(SOCKET TestSocket,std::string TestName,std::string strWriteMsg);
 	int WriteLanMac(SOCKET TestSocket,std::string TestName,std::string strWriteMsg);
 	int KeyTest(SOCKET TestSocket,std::string TestName,std::string &strOutput);
+	int SdCardTest(SOCKET TestSocket,std::string TestName);
+	int WifiTest(SOCKET TestSocket,std::string TestName);
+	int InterphoneTest(SOCKET TestSocket,std::string TestName);
+	int IrcutTest(SOCKET TestSocket,std::string TestName);
+	int LedTest(SOCKET TestSocket,std::string TestName);
+	int MonitorTest(SOCKET TestSocket,std::string TestName);
+	int PtzTest(SOCKET TestSocket,std::string TestName);
+	int CameraTest(SOCKET TestSocket,std::string TestName);
+	int StopCamera(SOCKET TestSocket,std::string TestName);
+
 };
 
 

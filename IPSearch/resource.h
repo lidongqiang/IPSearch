@@ -91,6 +91,8 @@
 #define IDC_STATIC_RK                   1052
 #define IDC_STATIC_ICO                  1053
 #define IDC_COMBO3                      1054
+#define IDC_BUTTON1                     1054
+#define IDC_BUTTON_EXIT                 1054
 #define IDC_EDIT11                      1055
 #define IDC_EDIT12                      1056
 #define IDC_EDIT13                      1057
@@ -105,7 +107,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        152
 #define _APS_NEXT_COMMAND_VALUE         32775
-#define _APS_NEXT_CONTROL_VALUE         1054
+#define _APS_NEXT_CONTROL_VALUE         1055
 #define _APS_NEXT_SYMED_VALUE           108
 #endif
 #endif

@@ -165,6 +165,7 @@ BEGIN_MESSAGE_MAP(CIPSearchDlg, CDialog)
 	ON_BN_CLICKED(IDC_BUTTON_FAIL, &CIPSearchDlg::OnBnClickedButtonFail)
 	ON_WM_CLOSE()
 	ON_COMMAND(ID_HELP_ABOUT, &CIPSearchDlg::OnHelpAbout)
+	ON_BN_CLICKED(IDC_BUTTON_EXIT, &CIPSearchDlg::OnBnClickedButtonExit)
 END_MESSAGE_MAP()
 
 
@@ -671,19 +672,15 @@ void CIPSearchDlg::OnNMClickListDevice(NMHDR *pNMHDR, LRESULT *pResult)
 
 void CIPSearchDlg::RtspPlay()
 {
-	libvlc_media_t *m_vlcMedia=NULL;
-	libvlc_media_player_t *m_vlcMplay=NULL;
-	libvlc_instance_t *m_vlcInst=NULL;
-	const char * const vlc_args[] = {  
-		"--demux=h264",  
-		"--ipv4",  
-		"--no-prefer-system-codecs",  
-		"--rtsp-caching=300",  
-		"--network-caching=500",  
-		"--rtsp-tcp",  
-	};
-	//m_DevTest.StartTestItem(m_TestSocket)
-
+	int ret;
+	CString strPrompt;
+	
+	ret = m_DevTest.CameraTest(m_TestSocket,wstr2str(m_Configs.strCameraName));
+	//if (ret<0)
+	//{
+	//	strPrompt.Format(GetLocalString(_T("FAILED")).c_str(),GetLocalString(m_Configs.strCameraName).c_str(),ret);
+	//	AddPrompt(strPrompt,True);
+	//}
 	CString strUrl;
 	strUrl.Format(_T("rtsp://%s/webcam"),m_strIp);
 	m_cAVPlayer.Play(wstr2str((LPCTSTR)strUrl));
@@ -718,7 +715,8 @@ BOOL CIPSearchDlg::TestProc()
 		PostMessage(WM_UPDATE_MSG,UPDATE_LIST,LIST_EMPTY);
 	}
 	CLogger::DEBUG_LEVEL level = CLogger::DEBUG_ALL;
-	logger = CLogger::StartLog((m_Configs.strLogPath + CLogger::TimeStr(true, true)).c_str(), level);    
+	logger = CLogger::StartLog((m_Configs.strLogPath +  m_strIp.GetBuffer(m_strIp.GetLength()) + TEXT("-") + CLogger::TimeStr(true, true)).c_str(), level);
+	m_strIp.ReleaseBuffer(m_strIp.GetLength());
 	if(logger) m_DevTest.StartLog(logger);
 
 	m_DevTest.SetTestPath(m_Configs.strTestPath);
@@ -737,9 +735,6 @@ BOOL CIPSearchDlg::TestProc()
 	strPrompt.Format(GetLocalString(_T("IDS_INFO_CONN_PASS")).c_str());
 	AddPrompt(strPrompt);
 
-	//打开rtsp流
-	RtspPlay();
-
 	strPrompt.Format(GetLocalString(_T("IDS_INFO_ENTER_TEST")).c_str());
 	AddPrompt(strPrompt);
 	ret = m_DevTest.EnterTestMode(m_TestSocket);
@@ -747,6 +742,7 @@ BOOL CIPSearchDlg::TestProc()
 	{
 		strPrompt.Format(GetLocalString(_T("IDS_INFO_ENTER_TEST_FAIL")).c_str(),ret);
 		AddPrompt(strPrompt,TRUE);
+		return FALSE;
 	}
 	else
 	{
@@ -754,7 +750,8 @@ BOOL CIPSearchDlg::TestProc()
 		AddPrompt(strPrompt);
 	}
 
-
+	//打开rtsp流
+	RtspPlay();
 	//3.创建接收设备端的消息的线程，专门用于接收设备端消息
 	//m_pRecvThread = AfxBeginThread(RecvDeviceThread,this);
 
@@ -770,33 +767,21 @@ BOOL CIPSearchDlg::TestProc()
 			strPrompt.Format(_T("%s:%s"),GetLocalString(m_TestCaseList[i].TestName).c_str(),GetLocalString(_T("IDS_TESTING")).c_str());
 			AddPrompt(strPrompt);
 			m_TestCaseList[i].nTestStatus = 1;
-			if (m_TestCaseList[i].TestName.compare(m_Configs.strKeyName)==0)
+			ret = DoTestItem(m_TestCaseList[i].TestName,strOutput);
+			if (ret<0)
 			{
-				ret = m_DevTest.KeyTest(m_TestSocket,wstr2str(m_Configs.strKeyName),strOutput);
-				if (ret<0)
-				{
-					//strPrompt.Format(_T("%s测试失败,错误码(%d)"),m_TestCaseList[i].TestName.c_str(),ret);
-					strPrompt.Format(GetLocalString(_T("FAILED")).c_str(),GetLocalString(m_TestCaseList[i].TestName).c_str(),ret);
-					AddPrompt(strPrompt,True);
-					break;
-				}
-				else if (ret == 2)
-				{
-					//strPrompt.Format(_T("%s测试:%s按键按下"),m_TestCaseList[i].TestName.c_str(),str2wstr(strOutput).c_str());
-					strPrompt.Format(GetLocalString(_T("IDS_KEY_DOWN")).c_str(),str2wstr(strOutput).c_str());
-					AddPrompt(strPrompt);
-				}
+				//strPrompt.Format(_T("%s测试失败,错误码(%d)"),m_TestCaseList[i].TestName.c_str(),ret);
+				strPrompt.Format(GetLocalString(_T("FAILED")).c_str(),GetLocalString(m_TestCaseList[i].TestName).c_str(),ret);
+				AddPrompt(strPrompt,TRUE);
+				break;
 			}
-			else
+			else if (ret == 2)
 			{
-				ret = m_DevTest.StartTestItem(m_TestSocket,wstr2str(m_TestCaseList[i].TestName));
-				if (ret<0)
-				{
-					m_TestCaseList[i].nTestStatus = -1;
-					strPrompt.Format(GetLocalString(_T("FAILED")).c_str(),GetLocalString(m_TestCaseList[i].TestName).c_str(),ret);
-					AddPrompt(strPrompt,TRUE);
-				}
+				//strPrompt.Format(_T("%s测试:%s按键按下"),m_TestCaseList[i].TestName.c_str(),str2wstr(strOutput).c_str());
+				strPrompt.Format(GetLocalString(_T("IDS_KEY_DOWN")).c_str(),str2wstr(strOutput).c_str());
+				AddPrompt(strPrompt);
 			}
+
 			//所有自动测试项完，第一个人工测试项
 			if (!m_TestCaseList[i].bAuto)
 			{
@@ -873,11 +858,11 @@ int CIPSearchDlg::connect_dev()
 	//setsockopt(m_TestSocket,SOL_SOCKET,SO_SNDTIMEO,(char *)&nNetTimeout,sizeof(int));
 	//设置接收超时
 	//setsockopt(m_TestSocket,SOL_SOCKET,SO_RCVTIMEO,(char *)&nNetTimeout,sizeof(int));
-	Timeout(m_TestSocket,3000);
+	Timeout(m_TestSocket,5000);
 
 	SOCKADDR_IN addrSrv; 
 	addrSrv.sin_addr.S_un.S_addr=inet_addr(wstr2str((LPCTSTR)m_strIp).c_str()); 
-	//addrSrv.sin_addr.S_un.S_addr=inet_addr("127.0.0.1");
+	//addrSrv.sin_addr.S_un.S_addr=inet_addr("172.16.14.156");
 	addrSrv.sin_family=AF_INET; 
 	addrSrv.sin_port=htons((u_short)6666 ); 
 	//connect(m_TestSocket,(SOCKADDR*)&addrSrv,sizeof(SOCKADDR));//向设备发出连接请求（connect) 
@@ -1120,7 +1105,7 @@ void CIPSearchDlg::SaveTestResult()
 }
 void CIPSearchDlg::WritePara()
 {
-	CUidDlg uiddlg;
+	CUidDlg uiddlg(m_Configs,m_LocalLan);
 	CString strPrompt;
 	CString strTmp;
 	int nRet;
@@ -1204,31 +1189,18 @@ void CIPSearchDlg::OnBnClickedButtonPass()
 			strPrompt.Format(_T("%s:%s"),GetLocalString(m_TestCaseList[i].TestName).c_str(),GetLocalString(_T("IDS_TESTING")).c_str());
 			AddPrompt(strPrompt);
 			m_TestCaseList[i].nTestStatus = 1;
-			if (m_TestCaseList[i].TestName.compare(m_Configs.strKeyName)==0)
+			ret = DoTestItem(m_TestCaseList[i].TestName,strOutput);
+			if (ret<0)
 			{
-				ret = m_DevTest.KeyTest(m_TestSocket,wstr2str(m_Configs.strKeyName),strOutput);
-				if (ret<=0)
-				{
-					strPrompt.Format(GetLocalString(_T("FAILED")).c_str(),GetLocalString(m_TestCaseList[i].TestName).c_str(),ret);
-					AddPrompt(strPrompt,True);
-					break;
-				}
-				else if (ret == 2)
-				{
-					//strPrompt.Format(_T("%s测试:%s按键按下"),m_TestCaseList[i].TestName.c_str(),str2wstr(strOutput).c_str());
-					strPrompt.Format(GetLocalString(_T("IDS_KEY_DOWN")).c_str(),str2wstr(strOutput).c_str());
-					AddPrompt(strPrompt);
-				}
+				strPrompt.Format(GetLocalString(_T("FAILED")).c_str(),GetLocalString(m_TestCaseList[i].TestName).c_str(),ret);
+				AddPrompt(strPrompt,True);
+				break;
 			}
-			else
+			else if (ret == 2)
 			{
-				ret = m_DevTest.StartTestItem(m_TestSocket,wstr2str(m_TestCaseList[i].TestName));
-				if (ret<0)
-				{
-					strPrompt.Format(GetLocalString(_T("FAILED")).c_str(),GetLocalString(m_TestCaseList[i].TestName).c_str(),ret);
-					AddPrompt(strPrompt,True);
-					break;
-				}
+				//strPrompt.Format(_T("%s测试:%s按键按下"),m_TestCaseList[i].TestName.c_str(),str2wstr(strOutput).c_str());
+				strPrompt.Format(GetLocalString(_T("IDS_KEY_DOWN")).c_str(),str2wstr(strOutput).c_str());
+				AddPrompt(strPrompt);
 			}
 			break;
 		}
@@ -1293,31 +1265,18 @@ void CIPSearchDlg::OnBnClickedButtonFail()
 			strPrompt.Format(_T("%s:%s"),GetLocalString(m_TestCaseList[i].TestName).c_str(),GetLocalString(_T("IDS_TESTING")).c_str());
 			AddPrompt(strPrompt);
 			m_TestCaseList[i].nTestStatus = 1;
-			if (m_TestCaseList[i].TestName.compare(m_Configs.strKeyName)==0)
+			ret = DoTestItem(m_TestCaseList[i].TestName,strOutput);
+			if (ret<0)
 			{
-				ret = m_DevTest.KeyTest(m_TestSocket,wstr2str(m_Configs.strKeyName),strOutput);
-				if (ret<0)
-				{
-					strPrompt.Format(GetLocalString(_T("FAILED")).c_str(),GetLocalString(m_TestCaseList[i].TestName).c_str(),ret);
-					AddPrompt(strPrompt,True);
-					break;
-				}
-				else if (ret == 2)
-				{
-					//strPrompt.Format(_T("%s测试:%s按键按下"),m_TestCaseList[i].TestName.c_str(),str2wstr(strOutput).c_str());
-					strPrompt.Format(GetLocalString(_T("IDS_KEY_DOWN")).c_str(),str2wstr(strOutput).c_str());
-					AddPrompt(strPrompt);
-				}
+				strPrompt.Format(GetLocalString(_T("FAILED")).c_str(),GetLocalString(m_TestCaseList[i].TestName).c_str(),ret);
+				AddPrompt(strPrompt,True);
+				break;
 			}
-			else
+			else if (ret == 2)
 			{
-				ret = m_DevTest.StartTestItem(m_TestSocket,wstr2str(m_TestCaseList[i].TestName));
-				if (ret<0)
-				{
-					strPrompt.Format(GetLocalString(_T("FAILED")).c_str(),GetLocalString(m_TestCaseList[i].TestName).c_str(),ret);
-					AddPrompt(strPrompt,True);
-					break;
-				}
+				//strPrompt.Format(_T("%s测试:%s按键按下"),m_TestCaseList[i].TestName.c_str(),str2wstr(strOutput).c_str());
+				strPrompt.Format(GetLocalString(_T("IDS_KEY_DOWN")).c_str(),str2wstr(strOutput).c_str());
+				AddPrompt(strPrompt);
 			}
 			break;
 		}
@@ -1467,4 +1426,81 @@ void CIPSearchDlg::OnHelpAbout()
 	// TODO: Add your command handler code here
 	CAboutDlg dlgAbout(m_Configs,m_LocalLan);
 	dlgAbout.DoModal();
+}
+int CIPSearchDlg::DoTestItem(std::wstring strTestName,std::string &strInfo)
+{
+	int ret;
+	//std::string strOutput;
+	if (strTestName.compare(m_Configs.strKeyName)==0)
+	{
+		ret=m_DevTest.KeyTest(m_TestSocket,wstr2str(strTestName),strInfo);
+	}
+	else if (strTestName.compare(m_Configs.strSdcardName)==0)
+	{
+		ret = m_DevTest.SdCardTest(m_TestSocket,wstr2str(strTestName));
+	}
+	else if (strTestName.compare(m_Configs.strWifiName)==0)
+	{
+		ret = m_DevTest.WifiTest(m_TestSocket,wstr2str(strTestName));
+	}
+	else if (strTestName.compare(m_Configs.strIrcutName)==0)
+	{
+		ret = m_DevTest.IrcutTest(m_TestSocket,wstr2str(strTestName));
+	}
+	else if (strTestName.compare(m_Configs.strInterphoneName)==0)
+	{
+		ret = m_DevTest.InterphoneTest(m_TestSocket,wstr2str(strTestName));
+	}
+	else if (strTestName.compare(m_Configs.strMonitorName)==0)
+	{
+		ret = m_DevTest.MonitorTest(m_TestSocket,wstr2str(strTestName));
+	}
+	else if (strTestName.compare(m_Configs.strPtzName)==0)
+	{
+		ret = m_DevTest.PtzTest(m_TestSocket,wstr2str(strTestName));
+	}
+	else if (strTestName.compare(m_Configs.strLedName)==0)
+	{
+		ret = m_DevTest.LedTest(m_TestSocket,wstr2str(strTestName));
+	}
+
+	return ret;
+}
+void CIPSearchDlg::OnBnClickedButtonExit()
+{
+	// TODO: Add your control notification handler code here
+	int ret,i;
+	bool bTest=false;
+	CString strPrompt;
+	strPrompt.Format(GetLocalString(_T("IDS_INFO_EXIT_TEST")).c_str());
+	AddPrompt(strPrompt);
+	
+	for (i=0;i<m_TestCaseList.size();i++)
+	{
+		if (m_TestCaseList[i].nTestStatus==1)
+		{
+			bTest = true;
+		}
+	}
+	if (bTest)
+	{
+		strPrompt.Format(GetLocalString(_T("IDS_ERROR_EIXT_TEST")).c_str());
+		MessageBox(strPrompt,GetLocalString(_T("IDS_ERROR_CAPTION")).c_str(),MB_OK|MB_ICONERROR);
+	}
+	ret = connect_dev();
+	if (ret<0)
+	{
+		strPrompt.Format(GetLocalString(_T("IDS_ERROR_CONN_FAIL")).c_str(),ret);
+		AddPrompt(strPrompt,TRUE);
+		return ;
+	}
+	ret = m_DevTest.StopTestItem(m_TestSocket,wstr2str(m_Configs.strCameraName));
+	ret = m_DevTest.ExitTest(m_TestSocket);
+	if (ret<0)
+	{
+		strPrompt.Format(GetLocalString(_T("IDS_INFO_EXIT_TEST_FAIL")).c_str(),ret);
+		AddPrompt(strPrompt,TRUE);
+	}
+	strPrompt.Format(GetLocalString(_T("IDS_INFO_EXIT_TEST_SUCCESS")).c_str());
+	AddPrompt(strPrompt);
 }
