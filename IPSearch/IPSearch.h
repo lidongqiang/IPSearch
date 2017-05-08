@@ -28,7 +28,8 @@
 #define LIST_ERROR 2
 #define LIST_EMPTY 3
 #define LIST_TIME  4
-#define LIST_WARN  5  
+#define LIST_WARN  5
+#define LIST_PASS  6 
 
 #define RF_TEST_PASS 1
 #define RF_TEST_FAIL 2

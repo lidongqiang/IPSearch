@@ -429,6 +429,23 @@ int CPcbaTest::UploadFile(std::string strFileName)
 		LOGER((CLogger::DEBUG_DUT,"tftp file error strCmd=%s\n",wstr2str(strCmd).c_str()));
 		return -2;
 	}
+	//if (!stringCompareIgnoreCase(strFileName,wstr2str(m_strWifiTest)))
+	//{
+	//	swprintf(strCmd,nof(strCmd),TEXT("tftp.exe -i %s put %s%s"),m_strIp.c_str(),m_strTestPath.c_str(),TEXT("wifi.sh"));
+	//	if(ShellSpawn.Exe(strCmd,2500, true)) 
+	//	{
+	//		if(0 != ShellSpawn.GetResult()) 
+	//		{
+	//			LOGER((CLogger::DEBUG_DUT,"tftp file error strCmd=%s\n",wstr2str(strCmd).c_str()));
+	//			return -3;
+	//		}
+	//	}
+	//	else
+	//	{
+	//		LOGER((CLogger::DEBUG_DUT,"tftp file error strCmd=%s\n",wstr2str(strCmd).c_str()));
+	//		return -4;
+	//	}
+	//}
 	return 0;
 }
 
@@ -439,6 +456,7 @@ int CPcbaTest::MonitorTest(SOCKET TestSocket,std::string TestName)
 
 int CPcbaTest::InterphoneTest(SOCKET TestSocket,std::string TestName)
 {
+	UploadFile("play_test.wav");
 	return StartTestItem(TestSocket,TestName,"-c play");
 }
 int CPcbaTest::SdCardTest(SOCKET TestSocket,std::string TestName)
@@ -459,6 +477,7 @@ int CPcbaTest::PtzTest(SOCKET TestSocket,std::string TestName)
 }
 int CPcbaTest::WifiTest(SOCKET TestSocket,std::string TestName)
 {
+	UploadFile("wifi.sh");
 	return StartTestItem(TestSocket,TestName);
 }
 int CPcbaTest::CameraTest(SOCKET TestSocket,std::string TestName)

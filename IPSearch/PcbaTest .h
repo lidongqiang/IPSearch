@@ -49,6 +49,7 @@ public:
 	CJsonConvert m_Json;
 	std::wstring m_strTestPath;
 	std::wstring m_strIp;
+	std::wstring m_strWifiTest;
 public:
 	CPcbaTest();
 	//~CPcbaTest();
@@ -65,6 +66,10 @@ public:
 	void SetDevIp(std::wstring strDevIp)
 	{
 		m_strIp = strDevIp;
+	}
+	void SetWifiTest(std::wstring strWifiTest)
+	{
+		m_strWifiTest = strWifiTest;
 	}
 	bool stringCompareIgnoreCase(std::string lhs,std::string rhs)
 	{

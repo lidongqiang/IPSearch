@@ -309,7 +309,9 @@ LRESULT CIPSearchDlg::OnHandleUpdateConfigMsg(WPARAM wParam,LPARAM lParam)
 			} else if (pLine->flag == LIST_TIME) {
 				m_listInfo.AddLine(CXListBox::White,CXListBox::Purple,pLine->pszLineText);
 			} else if (pLine->flag == LIST_WARN){ 
-				m_listInfo.AddLine(CXListBox::Black,CXListBox::Yellow,pLine->pszLineText);
+				m_listInfo.AddLine(CXListBox::Yellow,CXListBox::Black,pLine->pszLineText);
+			} else if (pLine->flag == LIST_PASS){ 
+				m_listInfo.AddLine(CXListBox::Green,CXListBox::Black,pLine->pszLineText);
 			} else {
 				m_listInfo.AddLine(CXListBox::White,CXListBox::Red,pLine->pszLineText);
 			}
@@ -414,7 +416,9 @@ void CIPSearchDlg::OnBnClickedBtnSerch()
 {
 	// TODO: Add your control notification handler code here
 
-	std::string strUid,strAddr,strDevname;
+	std::string strUid,strAddr,strDevname,strMac;
+	STRUCT_DEV_INFO DevInfo;
+	m_DevList.clear();
 	m_listDevice.DeleteAllItems();
 
 	GetDlgItem(ID_BTN_SERCH)->EnableWindow(FALSE);
@@ -479,7 +483,13 @@ void CIPSearchDlg::OnBnClickedBtnSerch()
 		}
 		if (strlen(szBuf) != 0)
 		{
-			m_Json.JsontoItem("UID",strUid,"IP",strAddr,"DEVICENAME",strDevname,szBuf);
+			m_Json.JsontoItem("UID",strUid,"IP",strAddr,"DEVICENAME",strDevname,"MAC",strMac,szBuf);
+			DevInfo.strUid = str2wstr(strUid);
+			DevInfo.strIP = str2wstr(strAddr);
+			DevInfo.strDevName = str2wstr(strDevname);
+			DevInfo.strMac = str2wstr(strMac);
+			m_DevList.push_back(DevInfo);
+			//this->SetDlgItemText(IDC_EDIT_PORT,str2wstr(strMac).c_str());
 			m_listDevice.InsertItem(nIndex,_T(""));
 			m_listDevice.SetItemText(nIndex,0,str2wstr(strUid).c_str());
 			m_listDevice.SetItemText(nIndex,1,str2wstr(strAddr).c_str());
@@ -657,8 +667,8 @@ void CIPSearchDlg::OnNMClickListDevice(NMHDR *pNMHDR, LRESULT *pResult)
 		SetDlgItemText(IDC_EDIT_UID, m_listDevice.GetItemText(pNMListView->iItem, 0));
 		SetDlgItemText(IDC_EDIT_IP, m_listDevice.GetItemText(pNMListView->iItem, 1));
 		SetDlgItemText(IDC_EDIT_DEVNAME, m_listDevice.GetItemText(pNMListView->iItem, 2));
+		SetDlgItemText(IDC_EDIT_PORT,m_DevList.at(m_listSelect).strMac.c_str());
 		m_strIp = m_listDevice.GetItemText(pNMListView->iItem, 1);
-		//RtspPlay();
 	}
 	else
 	{
@@ -721,6 +731,7 @@ BOOL CIPSearchDlg::TestProc()
 
 	m_DevTest.SetTestPath(m_Configs.strTestPath);
 	m_DevTest.SetDevIp(m_strIp.GetBuffer(m_strIp.GetLength()));
+	m_DevTest.SetWifiTest(m_Configs.strWifiName);
 	m_strIp.ReleaseBuffer(m_strIp.GetLength());
 	//1.连接设备
 	strPrompt.Format(GetLocalString(_T("IDS_INFO_CONN_DEVICE")).c_str(),m_strIp);
@@ -765,7 +776,7 @@ BOOL CIPSearchDlg::TestProc()
 		if (m_TestCaseList[i].nTestStatus == 0)
 		{
 			strPrompt.Format(_T("%s:%s"),GetLocalString(m_TestCaseList[i].TestName).c_str(),GetLocalString(_T("IDS_TESTING")).c_str());
-			AddPrompt(strPrompt);
+			AddPrompt(strPrompt,FALSE,LIST_WARN);
 			m_TestCaseList[i].nTestStatus = 1;
 			ret = DoTestItem(m_TestCaseList[i].TestName,strOutput);
 			if (ret<0)
@@ -773,7 +784,7 @@ BOOL CIPSearchDlg::TestProc()
 				//strPrompt.Format(_T("%s测试失败,错误码(%d)"),m_TestCaseList[i].TestName.c_str(),ret);
 				strPrompt.Format(GetLocalString(_T("FAILED")).c_str(),GetLocalString(m_TestCaseList[i].TestName).c_str(),ret);
 				AddPrompt(strPrompt,TRUE);
-				break;
+				goto TestExit;
 			}
 			else if (ret == 2)
 			{
@@ -800,18 +811,19 @@ BOOL CIPSearchDlg::TestProc()
 				ret = m_DevTest.QueryTestItem(m_TestSocket,wstr2str(m_TestCaseList[i].TestName),strOutput);
 				if (ret == 1)
 				{
-					ret = m_DevTest.StopTestItem(m_TestSocket,wstr2str(m_Configs.strSdcardName));
+					ret = m_DevTest.StopTestItem(m_TestSocket,wstr2str(m_TestCaseList[i].TestName));
 					if (ret<0)
 					{
 						m_TestCaseList[i].nTestStatus = -1;
 						strPrompt.Format(GetLocalString(_T("IDS_STOP_TEST_FAIL")).c_str(),GetLocalString(m_TestCaseList[i].TestName).c_str(),ret);
 						AddPrompt(strPrompt,TRUE);
+						goto TestExit;
 					}
 					else
 					{
 						m_TestCaseList[i].nTestStatus = 2;
 						strPrompt.Format(GetLocalString(_T("SUCCESS")).c_str(),GetLocalString(m_TestCaseList[i].TestName).c_str());
-						AddPrompt(strPrompt);
+						AddPrompt(strPrompt,FALSE,LIST_PASS);
 					}
 				}
 				else if (ret < 0)
@@ -824,6 +836,7 @@ BOOL CIPSearchDlg::TestProc()
 		}
 		Sleep(200);
 	}
+TestExit:
     m_pTestThread = NULL;
 	return TRUE;
 }
@@ -1181,7 +1194,7 @@ void CIPSearchDlg::OnBnClickedButtonPass()
 			}
 
 			strPrompt.Format(_T("%s:%s"),GetLocalString(m_TestCaseList[i].TestName).c_str(),GetLocalString(_T("IDS_PASS")).c_str());
-			AddPrompt(strPrompt);
+			AddPrompt(strPrompt,FALSE,LIST_PASS);
 			m_TestCaseList[i].nTestStatus = 2;
 		}
 		if (m_TestCaseList[i].nTestStatus == 0)
@@ -1200,7 +1213,7 @@ void CIPSearchDlg::OnBnClickedButtonPass()
 			{
 				//strPrompt.Format(_T("%s测试:%s按键按下"),m_TestCaseList[i].TestName.c_str(),str2wstr(strOutput).c_str());
 				strPrompt.Format(GetLocalString(_T("IDS_KEY_DOWN")).c_str(),str2wstr(strOutput).c_str());
-				AddPrompt(strPrompt);
+				AddPrompt(strPrompt,FALSE,LIST_WARN);
 			}
 			break;
 		}
@@ -1375,6 +1388,7 @@ void CIPSearchDlg::ExitTest()
 		if (m_TestCaseList[i].nTestStatus==1)
 		{
 			ret = m_DevTest.StopTestItem(m_TestSocket,wstr2str(m_TestCaseList[i].TestName));
+			m_TestCaseList[i].nTestStatus = -1;
 			if (ret<0)
 			{
 				strPrompt.Format(GetLocalString(_T("IDS_STOP_TEST_FAIL")).c_str(),GetLocalString(m_TestCaseList[i].TestName).c_str(),ret);
@@ -1383,6 +1397,7 @@ void CIPSearchDlg::ExitTest()
 			}
 		}
 	}
+	m_DevTest.StopCamera(m_TestSocket,wstr2str(m_Configs.strCameraName));
 }
 BOOL CIPSearchDlg::PreTranslateMessage(MSG* pMsg)
 {
@@ -1472,8 +1487,6 @@ void CIPSearchDlg::OnBnClickedButtonExit()
 	int ret,i;
 	bool bTest=false;
 	CString strPrompt;
-	strPrompt.Format(GetLocalString(_T("IDS_INFO_EXIT_TEST")).c_str());
-	AddPrompt(strPrompt);
 	
 	for (i=0;i<m_TestCaseList.size();i++)
 	{
@@ -1486,7 +1499,11 @@ void CIPSearchDlg::OnBnClickedButtonExit()
 	{
 		strPrompt.Format(GetLocalString(_T("IDS_ERROR_EIXT_TEST")).c_str());
 		MessageBox(strPrompt,GetLocalString(_T("IDS_ERROR_CAPTION")).c_str(),MB_OK|MB_ICONERROR);
+		return;
 	}
+
+	strPrompt.Format(GetLocalString(_T("IDS_INFO_EXIT_TEST")).c_str());
+	AddPrompt(strPrompt);
 	ret = connect_dev();
 	if (ret<0)
 	{

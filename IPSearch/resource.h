@@ -23,7 +23,6 @@
 #define IDB_BITMAP_LOGO                 140
 #define IDR_MAINMENU                    141
 #define IDR_MAINFRAME3                  142
-#define IDB_PNG1                        145
 #define IDB_BITMAP1                     146
 #define IDB_BITMAP2                     150
 #define IDB_BITMAP3                     151

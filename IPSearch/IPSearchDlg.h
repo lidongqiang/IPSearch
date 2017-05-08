@@ -27,6 +27,16 @@ typedef struct
 	int nTestStatus;//0--Œ¥≤‚ ‘£¨1---≤‚ ‘÷–£¨2----≤‚ ‘≥…π¶£¨-1----≤‚ ‘ ß∞‹,3--------»Àπ§≈–∂œ
 }TestCase,STRUCT_TEST_CASE;
 typedef vector<STRUCT_TEST_CASE> TEST_CASE_VECTOR;
+
+typedef struct  
+{
+	std::wstring strDevName;
+	std::wstring strIP;
+	std::wstring strUid;
+	std::wstring strMac;
+}DevInfo,STRUCT_DEV_INFO;
+typedef vector<STRUCT_DEV_INFO> DEV_INFO_VECTOR;
+
 // CIPSearchDlg ∂‘ª∞øÚ
 class CIPSearchDlg : public CDialog
 {
@@ -69,6 +79,7 @@ public:
 	CWinThread  *m_pRecvThread;
 	SOCKET		m_TestSocket;
 	TEST_CASE_VECTOR m_TestCaseList;
+	DEV_INFO_VECTOR m_DevList;
 	CJsonConvert m_Json;
 	CPcbaTest	m_DevTest;
 	//CVideoDlg	m_VideoDlg;
