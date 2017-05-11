@@ -17,7 +17,6 @@
 #include <Windows.h>  
 #include <json/json.h>
 #include <json/reader.h>
-#pragma comment(lib, "WS2_32.lib")  
 
 #define TEST_PORT 9090
 
@@ -255,6 +254,7 @@ void CIPSearchDlg::initUi()
 	font.Detach();
 	m_listInfo.SetWindowBKColor(RGB(0,0,0));
 
+	GetDlgItem(IDC_BTN_PLAYER)->EnableWindow(FALSE);
 	GetDlgItem(IDC_BUTTON_PASS)->EnableWindow(FALSE);
 	GetDlgItem(IDC_BUTTON_FAIL)->EnableWindow(FALSE);
 }
@@ -601,7 +601,7 @@ bool CIPSearchDlg::OnStartTest()
 
 	if (m_listSelect != -1)
 	{
-		initTestCase();
+		//initTestCase();
 		if (m_TestCaseList.size()==0&&!m_Configs.bWriteMac&&!m_Configs.bWriteUid)
 		{
 			strPromt.Format(GetLocalString(_T("IDS_ERROR_NO_TEST")).c_str());
@@ -636,7 +636,10 @@ void CIPSearchDlg::OnBnClickedButtonTest()
 
 		m_cAVPlayer.Stop();
 		this->SetDlgItemText(IDC_BUTTON_TEST,GetLocalString(_T("START")).c_str());
-		GetDlgItem(ID_BTN_APPLY)->EnableWindow(TRUE);
+		this->GetDlgItem(ID_BTN_APPLY)->EnableWindow(TRUE);
+		this->GetDlgItem(IDC_BUTTON_FAIL)->EnableWindow(FALSE);
+		this->GetDlgItem(IDC_BUTTON_PASS)->EnableWindow(FALSE);
+		this->GetDlgItem(IDC_BUTTON_NEXT)->EnableWindow(TRUE);
 		//AddPrompt(GetLocalString(_T("IDS_INFO_USER_ABORT")).c_str(),TRUE);
 	}
 	else
@@ -719,8 +722,6 @@ BOOL CIPSearchDlg::TestProc()
 	CLogger         *logger = NULL;
 
 	m_bRun = TRUE;
-	GetDlgItem(IDC_BUTTON_PASS)->EnableWindow(TRUE);
-	GetDlgItem(IDC_BUTTON_FAIL)->EnableWindow(TRUE);
 	if (m_listInfo.GetCount()>0) {
 		PostMessage(WM_UPDATE_MSG,UPDATE_LIST,LIST_EMPTY);
 	}
@@ -729,10 +730,12 @@ BOOL CIPSearchDlg::TestProc()
 	m_strIp.ReleaseBuffer(m_strIp.GetLength());
 	if(logger) m_DevTest.StartLog(logger);
 
+	GetDlgItem(IDC_BUTTON_NEXT)->EnableWindow(FALSE);
 	m_DevTest.SetTestPath(m_Configs.strTestPath);
 	m_DevTest.SetDevIp(m_strIp.GetBuffer(m_strIp.GetLength()));
 	m_DevTest.SetWifiTest(m_Configs.strWifiName);
 	m_strIp.ReleaseBuffer(m_strIp.GetLength());
+	initTestCase();
 	//1.连接设备
 	strPrompt.Format(GetLocalString(_T("IDS_INFO_CONN_DEVICE")).c_str(),m_strIp);
 	AddPrompt(strPrompt);
@@ -763,6 +766,7 @@ BOOL CIPSearchDlg::TestProc()
 
 	//打开rtsp流
 	RtspPlay();
+	Sleep(500);
 	//3.创建接收设备端的消息的线程，专门用于接收设备端消息
 	//m_pRecvThread = AfxBeginThread(RecvDeviceThread,this);
 
@@ -775,29 +779,30 @@ BOOL CIPSearchDlg::TestProc()
 	{
 		if (m_TestCaseList[i].nTestStatus == 0)
 		{
+			//所有自动测试项完，第一个人工测试项
+			if (!m_TestCaseList[i].bAuto)
+			{
+				break;
+			}
+
 			strPrompt.Format(_T("%s:%s"),GetLocalString(m_TestCaseList[i].TestName).c_str(),GetLocalString(_T("IDS_TESTING")).c_str());
 			AddPrompt(strPrompt,FALSE,LIST_WARN);
 			m_TestCaseList[i].nTestStatus = 1;
 			ret = DoTestItem(m_TestCaseList[i].TestName,strOutput);
 			if (ret<0)
 			{
-				//strPrompt.Format(_T("%s测试失败,错误码(%d)"),m_TestCaseList[i].TestName.c_str(),ret);
+				m_TestCaseList[i].nTestStatus = -1;
 				strPrompt.Format(GetLocalString(_T("FAILED")).c_str(),GetLocalString(m_TestCaseList[i].TestName).c_str(),ret);
 				AddPrompt(strPrompt,TRUE);
 				goto TestExit;
 			}
-			else if (ret == 2)
-			{
-				//strPrompt.Format(_T("%s测试:%s按键按下"),m_TestCaseList[i].TestName.c_str(),str2wstr(strOutput).c_str());
-				strPrompt.Format(GetLocalString(_T("IDS_KEY_DOWN")).c_str(),str2wstr(strOutput).c_str());
-				AddPrompt(strPrompt);
-			}
+			//else if (ret == 2)
+			//{
+			//	//strPrompt.Format(_T("%s测试:%s按键按下"),m_TestCaseList[i].TestName.c_str(),str2wstr(strOutput).c_str());
+			//	strPrompt.Format(GetLocalString(_T("IDS_KEY_DOWN")).c_str(),str2wstr(strOutput).c_str());
+			//	AddPrompt(strPrompt);
+			//}
 
-			//所有自动测试项完，第一个人工测试项
-			if (!m_TestCaseList[i].bAuto)
-			{
-					break;
-			}
 		}
 	}
 	while(bQuery)
@@ -817,7 +822,6 @@ BOOL CIPSearchDlg::TestProc()
 						m_TestCaseList[i].nTestStatus = -1;
 						strPrompt.Format(GetLocalString(_T("IDS_STOP_TEST_FAIL")).c_str(),GetLocalString(m_TestCaseList[i].TestName).c_str(),ret);
 						AddPrompt(strPrompt,TRUE);
-						goto TestExit;
 					}
 					else
 					{
@@ -835,6 +839,32 @@ BOOL CIPSearchDlg::TestProc()
 			}
 		}
 		Sleep(200);
+	}
+	
+	GetDlgItem(IDC_BUTTON_PASS)->EnableWindow(TRUE);
+	GetDlgItem(IDC_BUTTON_FAIL)->EnableWindow(TRUE);
+	for (i=0;i<m_TestCaseList.size();i++)
+	{
+		if (m_TestCaseList[i].nTestStatus == 0)
+		{
+			strPrompt.Format(_T("%s:%s"),GetLocalString(m_TestCaseList[i].TestName).c_str(),GetLocalString(_T("IDS_TESTING")).c_str());
+			AddPrompt(strPrompt,FALSE,LIST_WARN);
+			m_TestCaseList[i].nTestStatus = 1;
+			ret = DoTestItem(m_TestCaseList[i].TestName,strOutput);
+			if (ret<0)
+			{
+				m_TestCaseList[i].nTestStatus = -1;
+				strPrompt.Format(GetLocalString(_T("FAILED")).c_str(),GetLocalString(m_TestCaseList[i].TestName).c_str(),ret);
+				AddPrompt(strPrompt,TRUE);
+			}
+			else if (ret == 2)
+			{
+				//strPrompt.Format(GetLocalString(_T("IDS_KEY_DOWN")).c_str(),str2wstr(strOutput).c_str());
+				strPrompt.Format(GetLocalString(_T("IDS_KEY_DOWN")).c_str());
+				AddPrompt(strPrompt);
+			}
+			break;
+		}
 	}
 TestExit:
     m_pTestThread = NULL;
@@ -973,6 +1003,13 @@ void CIPSearchDlg::initTestCase()
 		TestCase.nTestStatus = 0;
 		m_TestCaseList.push_back(TestCase);
 	}
+	if (m_Configs.bHdmiTest)
+	{
+		TestCase.TestName = m_Configs.strHdmiName;
+		TestCase.bAuto = false;
+		TestCase.nTestStatus = 0;
+		m_TestCaseList.push_back(TestCase);
+	}
 }
 BOOL CIPSearchDlg::RecvProc()
 {
@@ -1061,6 +1098,8 @@ void CIPSearchDlg::OnBnClickedButtonNext()
 	if (m_listSelect>0&&m_listSelect<nCount)
 	{
 		m_bRun = false;
+		ExitTest();
+		closesocket(m_TestSocket);
 		m_strIp = m_listDevice.GetItemText(m_listSelect, 1);
 		TestProc();
 	}
@@ -1212,7 +1251,8 @@ void CIPSearchDlg::OnBnClickedButtonPass()
 			else if (ret == 2)
 			{
 				//strPrompt.Format(_T("%s测试:%s按键按下"),m_TestCaseList[i].TestName.c_str(),str2wstr(strOutput).c_str());
-				strPrompt.Format(GetLocalString(_T("IDS_KEY_DOWN")).c_str(),str2wstr(strOutput).c_str());
+				//strPrompt.Format(GetLocalString(_T("IDS_KEY_DOWN")).c_str(),str2wstr(strOutput).c_str());
+				strPrompt.Format(GetLocalString(_T("IDS_KEY_DOWN")).c_str());
 				AddPrompt(strPrompt,FALSE,LIST_WARN);
 			}
 			break;
@@ -1239,6 +1279,7 @@ void CIPSearchDlg::OnBnClickedButtonPass()
 		}
 		GetDlgItem(IDC_BUTTON_PASS)->EnableWindow(FALSE);
 		GetDlgItem(IDC_BUTTON_FAIL)->EnableWindow(FALSE);
+		GetDlgItem(IDC_BUTTON_NEXT)->EnableWindow(TRUE);
 	}
 }
 
@@ -1276,7 +1317,7 @@ void CIPSearchDlg::OnBnClickedButtonFail()
 		if (m_TestCaseList[i].nTestStatus == 0)
 		{
 			strPrompt.Format(_T("%s:%s"),GetLocalString(m_TestCaseList[i].TestName).c_str(),GetLocalString(_T("IDS_TESTING")).c_str());
-			AddPrompt(strPrompt);
+			AddPrompt(strPrompt,LIST_WARN);
 			m_TestCaseList[i].nTestStatus = 1;
 			ret = DoTestItem(m_TestCaseList[i].TestName,strOutput);
 			if (ret<0)
@@ -1288,7 +1329,8 @@ void CIPSearchDlg::OnBnClickedButtonFail()
 			else if (ret == 2)
 			{
 				//strPrompt.Format(_T("%s测试:%s按键按下"),m_TestCaseList[i].TestName.c_str(),str2wstr(strOutput).c_str());
-				strPrompt.Format(GetLocalString(_T("IDS_KEY_DOWN")).c_str(),str2wstr(strOutput).c_str());
+				//strPrompt.Format(GetLocalString(_T("IDS_KEY_DOWN")).c_str(),str2wstr(strOutput).c_str());
+				strPrompt.Format(GetLocalString(_T("IDS_KEY_DOWN")).c_str());
 				AddPrompt(strPrompt);
 			}
 			break;
@@ -1303,6 +1345,7 @@ void CIPSearchDlg::OnBnClickedButtonFail()
 		AddPrompt(strPrompt);
 		GetDlgItem(IDC_BUTTON_PASS)->EnableWindow(FALSE);
 		GetDlgItem(IDC_BUTTON_FAIL)->EnableWindow(FALSE);
+		GetDlgItem(IDC_BUTTON_NEXT)->EnableWindow(TRUE);
 	}
 }
 
@@ -1475,6 +1518,10 @@ int CIPSearchDlg::DoTestItem(std::wstring strTestName,std::string &strInfo)
 		ret = m_DevTest.PtzTest(m_TestSocket,wstr2str(strTestName));
 	}
 	else if (strTestName.compare(m_Configs.strLedName)==0)
+	{
+		ret = m_DevTest.LedTest(m_TestSocket,wstr2str(strTestName));
+	}
+	else if (strTestName.compare(m_Configs.strHdmiName)==0)
 	{
 		ret = m_DevTest.LedTest(m_TestSocket,wstr2str(strTestName));
 	}

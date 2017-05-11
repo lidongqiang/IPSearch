@@ -91,6 +91,7 @@ public:
 	int InterphoneTest(SOCKET TestSocket,std::string TestName);
 	int IrcutTest(SOCKET TestSocket,std::string TestName);
 	int LedTest(SOCKET TestSocket,std::string TestName);
+	int HdmiTest(SOCKET TestSocket,std::string TestName);
 	int MonitorTest(SOCKET TestSocket,std::string TestName);
 	int PtzTest(SOCKET TestSocket,std::string TestName);
 	int CameraTest(SOCKET TestSocket,std::string TestName);

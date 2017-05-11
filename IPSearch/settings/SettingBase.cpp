@@ -293,6 +293,7 @@ bool CIniSettingBase::LoadToolSetting(std::wstring strConfig)
 	bMonitorTest		= 1 == _wtoi(GetStr(TEXT("MonitorTest")).c_str());
 	bInterphoneTest		= 1 == _wtoi(GetStr(TEXT("InterphoneTest")).c_str());
 	bPtzTest			= 1 == _wtoi(GetStr(TEXT("PtzTest")).c_str());
+	bHdmiTest			= 1 == _wtoi(GetStr(TEXT("HdmiTest")).c_str());
 	bIrcutTest			= 1 == _wtoi(GetStr(TEXT("IrcutTest")).c_str());
 	bWriteUid			= 1 == _wtoi(GetStr(TEXT("WriteUid")).c_str());
 	bWriteMac			= 1 == _wtoi(GetStr(TEXT("WriteMac")).c_str());
@@ -303,6 +304,7 @@ bool CIniSettingBase::LoadToolSetting(std::wstring strConfig)
 	strInterphoneName	= GetStr(TEXT("InterphoneName"));
 	strPtzName			= GetStr(TEXT("PtzName"));
 	strIrcutName		= GetStr(TEXT("IrcutName"));
+	strHdmiName			= GetStr(TEXT("HdmiName"));
 	strCameraName		= GetStr(TEXT("CameraName"));
 	strLedName			= GetStr(TEXT("LedName"));
 	strWriteName		= GetStr(TEXT("WriteName"));
@@ -409,6 +411,7 @@ bool CIniSettingBase::SaveToolSetting(std::wstring strConfig)
 		SetStr( TEXT("MonitorTest")    		, bMonitorTest ?checke:unckeck);
 		SetStr( TEXT("InterphoneTest")    		, bInterphoneTest ?checke:unckeck);
 		SetStr( TEXT("PtzTest")    		, bPtzTest ?checke:unckeck);
+		SetStr( TEXT("HdmiTest")    		, bHdmiTest ?checke:unckeck);
 		SetStr( TEXT("IrcutTest")    		, bIrcutTest ?checke:unckeck);
 		SetStr( TEXT("WriteUid")    		, bWriteUid ?checke:unckeck);
 		SetStr( TEXT("WriteMac")    		, bWriteMac ?checke:unckeck);

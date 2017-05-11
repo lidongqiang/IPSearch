@@ -1,7 +1,7 @@
 #ifndef _SETTINGBASE_H_
 #define _SETTINGBASE_H_
 #define USER_LOGIN
-#define APP_VERSION " V1.0.0"
+#define APP_VERSION " V1.0.1"
 #include "inifile.h"
 //#include "../config.h"
 
@@ -167,6 +167,7 @@ public:
 	std::wstring strLedName;
 	std::wstring strIrcutName;
 	std::wstring strCameraName;
+	std::wstring strHdmiName;
 	std::wstring strWriteName;
 	std::wstring strLogPath;
 	std::wstring strTestPath;
@@ -179,6 +180,7 @@ public:
 	bool bMonitorTest;
 	bool bInterphoneTest;
 	bool bPtzTest;
+	bool bHdmiTest;
 	bool bIrcutTest;
 	bool bWriteUid;
 	bool bWriteMac;

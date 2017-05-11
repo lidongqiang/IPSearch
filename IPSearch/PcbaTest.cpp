@@ -471,6 +471,10 @@ int CPcbaTest::LedTest(SOCKET TestSocket,std::string TestName)
 {
 	return StartTestItem(TestSocket,TestName);
 }
+int CPcbaTest::HdmiTest(SOCKET TestSocket,std::string TestName)
+{
+	return StartTestItem(TestSocket,TestName);
+}
 int CPcbaTest::PtzTest(SOCKET TestSocket,std::string TestName)
 {
 	return StartTestItem(TestSocket,TestName);
