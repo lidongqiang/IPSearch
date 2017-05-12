@@ -11,7 +11,7 @@
 #define IDR_HTML_PLAYERDLG              106
 #define IDR_HTML_TESTDLG                107
 #define IDR_MAINFRAME                   128
-#define IDR_MAINFRAME2                  128
+#define IDR_MAINFRAME2                  138
 #define IDD_SETTING_DIALOG              129
 #define IDD_TEST_DIALOG                 132
 #define IDD_BITCONFIG_DIALOG            132
@@ -19,10 +19,10 @@
 #define IDD_VIDEO_DIALOG                133
 #define IDD_UID_DIALOG                  134
 #define IDI_ICON1                       138
-#define IDR_MAINFRAME1                  138
+#define IDR_MAINFRAME1                  142
 #define IDB_BITMAP_LOGO                 140
 #define IDR_MAINMENU                    141
-#define IDR_MAINFRAME3                  142
+#define IDR_MAINFRAME3                  128
 #define IDB_BITMAP1                     146
 #define IDB_BITMAP2                     150
 #define IDB_BITMAP3                     151

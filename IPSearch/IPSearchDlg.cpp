@@ -498,6 +498,7 @@ void CIPSearchDlg::OnBnClickedBtnSerch()
 		}
 		Sleep(100);  
 	}  
+
 	WSACleanup();
 	if (nIndex==0)
 	{
@@ -601,7 +602,7 @@ bool CIPSearchDlg::OnStartTest()
 
 	if (m_listSelect != -1)
 	{
-		//initTestCase();
+		initTestCase();
 		if (m_TestCaseList.size()==0&&!m_Configs.bWriteMac&&!m_Configs.bWriteUid)
 		{
 			strPromt.Format(GetLocalString(_T("IDS_ERROR_NO_TEST")).c_str());
@@ -735,7 +736,6 @@ BOOL CIPSearchDlg::TestProc()
 	m_DevTest.SetDevIp(m_strIp.GetBuffer(m_strIp.GetLength()));
 	m_DevTest.SetWifiTest(m_Configs.strWifiName);
 	m_strIp.ReleaseBuffer(m_strIp.GetLength());
-	initTestCase();
 	//1.连接设备
 	strPrompt.Format(GetLocalString(_T("IDS_INFO_CONN_DEVICE")).c_str(),m_strIp);
 	AddPrompt(strPrompt);
@@ -1098,10 +1098,15 @@ void CIPSearchDlg::OnBnClickedButtonNext()
 	if (m_listSelect>0&&m_listSelect<nCount)
 	{
 		m_bRun = false;
-		ExitTest();
-		closesocket(m_TestSocket);
+		//closesocket(m_TestSocket);
 		m_strIp = m_listDevice.GetItemText(m_listSelect, 1);
-		TestProc();
+		//initTestCase();
+		//TestProc();
+		if (OnStartTest())
+		{
+			this->SetDlgItemText(IDC_BUTTON_TEST,GetLocalString(_T("IDS_TEXT_STOP_BUTTON")).c_str());
+			GetDlgItem(ID_BTN_APPLY)->EnableWindow(FALSE);
+		}
 	}
 	else
 	{
@@ -1211,16 +1216,11 @@ void CIPSearchDlg::OnBnClickedButtonPass()
 	int nCount=0;
 	CString strPrompt;
 	std::string strOutput;
-	bool bAllTest = true;
 
 	nCount = m_TestCaseList.size();
 	//1.获取当前测试项，保存测试结果，设置测试状态为已测试
 	for (i=0;i<m_TestCaseList.size();i++)
 	{
-		if (m_TestCaseList[i].nTestStatus == 1&&m_TestCaseList[i].bAuto)
-		{
-			bAllTest = false;
-		}
 		if (m_TestCaseList[i].nTestStatus == 1&&!m_TestCaseList[i].bAuto)
 		{
 			ret = m_DevTest.StopTestItem(m_TestSocket,wstr2str(m_TestCaseList[i].TestName));
@@ -1259,7 +1259,7 @@ void CIPSearchDlg::OnBnClickedButtonPass()
 		}
 	}
 
-	if (bAllTest&&m_TestCaseList[nCount-1].nTestStatus!=0&&m_TestCaseList[nCount-1].nTestStatus!=1)
+	if (m_TestCaseList[nCount-1].nTestStatus!=0&&m_TestCaseList[nCount-1].nTestStatus!=1)
 	{
 		//保存测试结果
 		SaveTestResult();
@@ -1290,25 +1290,20 @@ void CIPSearchDlg::OnBnClickedButtonFail()
 	int i,j;
 	std::string strOutput;
 	CString strPrompt;
-	bool bAllTest = true;
 	int nCount = 0;
 	nCount = m_TestCaseList.size();
 	m_bTestPass = false;
 	//获取下一个未测试的测试项
 	for (i=0;i<m_TestCaseList.size();i++)
 	{
-		if (m_TestCaseList[i].nTestStatus == 1&&m_TestCaseList[i].bAuto)
-		{
-			bAllTest = false;
-		}
 		if (m_TestCaseList[i].nTestStatus == 1&&!m_TestCaseList[i].bAuto)
 		{
+			m_TestCaseList[i].nTestStatus = -1;
 			ret = m_DevTest.StopTestItem(m_TestSocket,wstr2str(m_TestCaseList[i].TestName));
 			if (ret<0)
 			{
 				strPrompt.Format(GetLocalString(_T("IDS_STOP_TEST_FAIL")).c_str(),GetLocalString(m_TestCaseList[i].TestName).c_str(),ret);
 				AddPrompt(strPrompt,TRUE);
-				m_TestCaseList[i].nTestStatus = -1;
 				m_bTestPass = false;
 			}
 			strPrompt.Format(_T("%s:%s"),GetLocalString(m_TestCaseList[i].TestName).c_str(),GetLocalString(_T("IDS_FAIL")).c_str());
@@ -1337,7 +1332,7 @@ void CIPSearchDlg::OnBnClickedButtonFail()
 		}
 	}
 
-	if (bAllTest&&m_TestCaseList[nCount-1].nTestStatus==-1)
+	if (m_TestCaseList[nCount-1].nTestStatus==-1)
 	{
 		//保存测试结果
 		SaveTestResult();
