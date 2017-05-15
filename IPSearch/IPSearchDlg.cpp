@@ -247,7 +247,7 @@ void CIPSearchDlg::initUi()
 	m_listDevice.DeleteAllItems();
 
 	CFont font;
-	font.CreateFont(-13,10,0,0,FW_NORMAL,FALSE,FALSE,0,  
+	font.CreateFont(-15,10,0,0,FW_NORMAL,FALSE,FALSE,0,  
 		ANSI_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,  
 		DEFAULT_QUALITY,DEFAULT_PITCH|FF_DONTCARE,_T("ËÎÌå"));
 	m_listInfo.SetFont(&font);
@@ -718,11 +718,12 @@ BOOL CIPSearchDlg::TestProc()
 	int nWifiTest=-1;
 	std::string strMsg,strSta,strOutput;
 	bool bQuery = true;
+	bool bMaunlTest=false;
 	//int nErrCode;
 	CString strPrompt;
 	CLogger         *logger = NULL;
 
-	m_bRun = TRUE;
+	m_bRun = true;
 	if (m_listInfo.GetCount()>0) {
 		PostMessage(WM_UPDATE_MSG,UPDATE_LIST,LIST_EMPTY);
 	}
@@ -847,6 +848,7 @@ BOOL CIPSearchDlg::TestProc()
 	{
 		if (m_TestCaseList[i].nTestStatus == 0)
 		{
+			bMaunlTest = true;
 			strPrompt.Format(_T("%s:%s"),GetLocalString(m_TestCaseList[i].TestName).c_str(),GetLocalString(_T("IDS_TESTING")).c_str());
 			AddPrompt(strPrompt,FALSE,LIST_WARN);
 			m_TestCaseList[i].nTestStatus = 1;
@@ -865,6 +867,27 @@ BOOL CIPSearchDlg::TestProc()
 			}
 			break;
 		}
+	}
+	if (!bMaunlTest)
+	{
+		SaveTestResult();
+		strPrompt.Format(GetLocalString(_T("IDS_INFO_TEST_OVER")).c_str());
+		AddPrompt(strPrompt);
+		for (i=0;i<m_TestCaseList.size();i++)
+		{
+			if (m_TestCaseList[i].nTestStatus==-1)
+			{
+				break;
+			}
+		}
+		if (i>=m_TestCaseList.size())
+		{
+			//Ð´ºÅ
+			WritePara();
+		}
+		GetDlgItem(IDC_BUTTON_PASS)->EnableWindow(FALSE);
+		GetDlgItem(IDC_BUTTON_FAIL)->EnableWindow(FALSE);
+		GetDlgItem(IDC_BUTTON_NEXT)->EnableWindow(TRUE);
 	}
 TestExit:
     m_pTestThread = NULL;
@@ -1097,11 +1120,8 @@ void CIPSearchDlg::OnBnClickedButtonNext()
 
 	if (m_listSelect>0&&m_listSelect<nCount)
 	{
-		m_bRun = false;
-		//closesocket(m_TestSocket);
+		//m_bRun = false;
 		m_strIp = m_listDevice.GetItemText(m_listSelect, 1);
-		//initTestCase();
-		//TestProc();
 		if (OnStartTest())
 		{
 			this->SetDlgItemText(IDC_BUTTON_TEST,GetLocalString(_T("IDS_TEXT_STOP_BUTTON")).c_str());
@@ -1347,11 +1367,16 @@ void CIPSearchDlg::OnBnClickedButtonFail()
 void CIPSearchDlg::OnClose()
 {
 	// TODO: Add your message handler code here and/or call default
+	if (m_bRun)
+	{
+		MessageBox(GetLocalString(_T("IDS_ERROR_STILL_RUNNING")).c_str(),GetLocalString(_T("IDS_ERROR_CAPTION")).c_str(),MB_OK|MB_ICONERROR);
+		return;
+	}
 	if(m_pLog) {
 		delete m_pLog;
 		m_pLog = NULL;
 	}
-	CDialog::OnClose();
+	CDialog::OnOK();
 }
 
 BOOL CIPSearchDlg::LoadConfig()
@@ -1559,6 +1584,7 @@ void CIPSearchDlg::OnBnClickedButtonExit()
 	{
 		strPrompt.Format(GetLocalString(_T("IDS_INFO_EXIT_TEST_FAIL")).c_str(),ret);
 		AddPrompt(strPrompt,TRUE);
+		return ;
 	}
 	strPrompt.Format(GetLocalString(_T("IDS_INFO_EXIT_TEST_SUCCESS")).c_str());
 	AddPrompt(strPrompt);

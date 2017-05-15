@@ -26,6 +26,7 @@ void CAVPlayer::Init()
 {
     if (! m_pVLC_Inst)
     {
+		//--sout-display-delay ²¥·ÅÑÓ³Ù
         m_pVLC_Inst = libvlc_new(0, NULL);
     }
 }
@@ -59,7 +60,7 @@ bool CAVPlayer::Play(const std::string &strPath)
     libvlc_media_t *m;
 
     m = libvlc_media_new_path(m_pVLC_Inst, strPath.c_str());
-    
+	libvlc_media_add_option(m, ":network-caching=500");
 
     if (m)
     {
