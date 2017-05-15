@@ -35,7 +35,7 @@ exe_exit:
 }
 bool CSpawn::ExeArg(int nTimeOut,bool sync,wchar_t * format,...)
 {
-    wchar_t     strCmd[2600] = {0};  
+    wchar_t     strCmd[260] = {0};  
     va_list     args;
     va_start(args, format);
     wvsprintf(strCmd,format, args);
@@ -182,7 +182,9 @@ bool CSpawn::InitEnv()
     if(NULL == m_hExitEvent) {
         goto createpipe_exit;
     }
-    m_ncBuf = 0;
+    memset(m_ReadBuf,0,sizeof(m_ReadBuf));
+    m_ncBuf     = 0;
+    m_nExitCode = -1;
     return true;
 createpipe_exit:
     if(NULL != m_hExitEvent) {

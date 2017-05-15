@@ -415,8 +415,8 @@ int CPcbaTest::UploadFile(std::string strFileName)
 
 	LOGER((CLogger::DEBUG_DUT,"UploadFile()\n"));
 	//tftp.exe -i 172.16.14.62 put test_ftp.txt
-	swprintf(strCmd,nof(strCmd),TEXT("tftp.exe -i %s put %s%s"),m_strIp.c_str(),m_strTestPath.c_str(),str2wstr(strFileName).c_str());
-	if(ShellSpawn.Exe(strCmd,2500, true)) 
+	swprintf(strCmd,nof(strCmd),TEXT("tftp -i %s put %s%s"),m_strIp.c_str(),m_strTestPath.c_str(),str2wstr(strFileName).c_str());
+	if(ShellSpawn.Exe(strCmd,25000, true)) 
 	{
 		if(0 != ShellSpawn.GetResult()) 
 		{
