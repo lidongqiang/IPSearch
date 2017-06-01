@@ -10,6 +10,7 @@
 #include "VideoDlg.h"
 #include "JsonConvert.h"
 #include "XListBox/XListBox.h"
+#include "label/FontStatic.h"
 #include "debug.h"
 #include "PcbaTest .h"
 #include "AVPlayer.h"
@@ -84,6 +85,7 @@ public:
 	CPcbaTest	m_DevTest;
 	//CVideoDlg	m_VideoDlg;
 	CXListBox   m_listInfo;
+	CFontStatic m_lbVideo;
 	CLogger     *m_pLog;
 public:
 	void initUi();

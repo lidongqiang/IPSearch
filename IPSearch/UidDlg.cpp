@@ -4,6 +4,7 @@
 #include "stdafx.h"
 #include "IPSearch.h"
 #include "UidDlg.h"
+#include "cmfuns.h"
 
 
 // CUidDlg dialog
@@ -32,13 +33,36 @@ END_MESSAGE_MAP()
 
 
 // CUidDlg message handlers
-
+std::wstring CUidDlg::GetLocalString(std::wstring strKey)
+{
+	return m_LocalLang.GetLanStr(strKey);
+}
 void CUidDlg::OnBnClickedOk()
 {
 	// TODO: Add your control notification handler code here
-	this->GetDlgItemText(IDC_EDIT_UID,strUid);
-	this->GetDlgItemText(IDC_EDIT_MAC,strLanmac);
+	CString strPromt;
+	if (m_Configs.bWriteUid)
+	{
+		this->GetDlgItemText(IDC_EDIT_UID,strUid);
+		if (strUid.IsEmpty())
+		{
+			strPromt.Format(GetLocalString(_T("IDS_ERROR_INVALID_UID")).c_str());
+			goto OnBnClickedOk_Exit;
+		}
+	}
+	if (m_Configs.bWriteMac)
+	{
+		this->GetDlgItemText(IDC_EDIT_MAC,strLanmac);
+		if(!CheckMacStr(strLanmac)) 
+		{
+			strPromt.Format(GetLocalString(_T("IDS_ERROR_INVALID_LANMAC")).c_str(),strLanmac);
+			goto OnBnClickedOk_Exit;
+		}
+	}
 	OnOK();
+OnBnClickedOk_Exit:
+	if(!strPromt.IsEmpty()) MessageBox(strPromt,GetLocalString(_T("IDS_ERROR_CAPTION")).c_str(),MB_OK|MB_ICONERROR);
+	return;
 }
 
 BOOL CUidDlg::OnInitDialog()

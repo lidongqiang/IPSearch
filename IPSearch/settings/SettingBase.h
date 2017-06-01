@@ -1,7 +1,7 @@
 #ifndef _SETTINGBASE_H_
 #define _SETTINGBASE_H_
 #define USER_LOGIN
-#define APP_VERSION " V1.0.3"
+#define APP_VERSION " V1.0.4"
 #include "inifile.h"
 //#include "../config.h"
 

@@ -1,0 +1,102 @@
+DEBUG 1.1.1 Jun  1 2017 log Message
+Time       Message
+----------------------------------------------------------------------------------------------
+17:25:03   EnterTestMode()
+17:25:03   send_msg:{
+   "CMD" : "ENTER",
+   "TYPE" : "CMD"
+}
+
+17:25:05   recv_msg{
+	"TYPE":	"RES",
+	"RES":	"ENTER",
+	"MSG":	"",
+	"STATUS":	"ACK",
+	"ERR_CODE":	"0"
+}
+
+17:25:05   UploadFile()
+
+17:25:05   StartTestItem()
+17:25:05   send msg:{
+   "CMD" : "START",
+   "MSG" : "",
+   "TEST_ITEM" : "camera_test",
+   "TYPE" : "CMD"
+}
+
+17:25:05   recv msg:{
+	"TYPE":	"RES",
+	"TEST_ITEM":	"camera_test",
+	"RES":	"START",
+	"MSG":	"",
+	"STATUS":	"ACK",
+	"ERR_CODE":	"0"
+}
+
+17:25:07   UploadFile()
+
+17:25:07   StartTestItem()
+17:25:07   send msg:{
+   "CMD" : "START",
+   "MSG" : "",
+   "TEST_ITEM" : "hdmi_test",
+   "TYPE" : "CMD"
+}
+
+17:25:07   recv msg:{
+	"TYPE":	"RES",
+	"TEST_ITEM":	"hdmi_test",
+	"RES":	"START",
+	"MSG":	"",
+	"STATUS":	"ACK",
+	"ERR_CODE":	"0"
+}
+
+17:25:11   StopTestItem()
+17:25:11   send_msg:{
+   "CMD" : "STOP",
+   "TEST_ITEM" : "hdmi_test",
+   "TYPE" : "CMD"
+}
+
+17:25:12   recv_msg:{
+	"TYPE":	"RES",
+	"TEST_ITEM":	"hdmi_test",
+	"RES":	"STOP",
+	"MSG":	"",
+	"STATUS":	"ACK",
+	"ERR_CODE":	"0"
+}
+
+17:25:12   StopTestItem()
+17:25:12   send_msg:{
+   "CMD" : "STOP",
+   "TEST_ITEM" : "camera_test",
+   "TYPE" : "CMD"
+}
+
+17:25:12   recv_msg:{
+	"TYPE":	"RES",
+	"TEST_ITEM":	"camera_test",
+	"RES":	"STOP",
+	"MSG":	"",
+	"STATUS":	"ACK",
+	"ERR_CODE":	"0"
+}
+
+17:25:12   ExitTest()
+17:25:12   {
+   "CMD" : "EXIT",
+   "TYPE" : "CMD"
+}
+
+
+17:25:15   recv_msg:{
+	"TYPE":	"RES",
+	"RES":	"EXIT",
+	"MSG":	"",
+	"STATUS":	"ACK",
+	"ERR_CODE":	"0"
+}
+

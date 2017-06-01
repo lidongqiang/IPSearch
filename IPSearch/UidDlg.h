@@ -25,6 +25,7 @@ public:
 	CIniSettingBase &m_Configs;
 	CIniLocalLan    &m_LocalLang;
 public:
+	std::wstring GetLocalString(std::wstring strKey);
 	afx_msg void OnBnClickedOk();
 	virtual BOOL OnInitDialog();
 };

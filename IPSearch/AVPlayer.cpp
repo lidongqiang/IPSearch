@@ -24,10 +24,18 @@ CAVPlayer::~CAVPlayer(void)
 
 void CAVPlayer::Init()
 {
+	const char * const vlc_args[] = {  
+		"--demux=h264",  
+		"--ipv4",  
+		"--no-prefer-system-codecs",  
+		"--rtsp-caching=500",  
+		"--network-caching=500",  
+		"--rtsp-tcp",  
+	};
     if (! m_pVLC_Inst)
     {
 		//--sout-display-delay ²¥·ÅÑÓ³Ù
-        m_pVLC_Inst = libvlc_new(0, NULL);
+        m_pVLC_Inst = libvlc_new(sizeof(vlc_args)/sizeof(vlc_args[0]), vlc_args);
     }
 }
 
@@ -59,9 +67,9 @@ bool CAVPlayer::Play(const std::string &strPath)
     bool bRet = false;
     libvlc_media_t *m;
 
-    m = libvlc_media_new_path(m_pVLC_Inst, strPath.c_str());
-	libvlc_media_add_option(m, ":network-caching=500");
-
+    //m = libvlc_media_new_path(m_pVLC_Inst, strPath.c_str());
+	m = libvlc_media_new_location(m_pVLC_Inst,strPath.c_str());
+	
     if (m)
     {
         if (m_pVLC_Player = libvlc_media_player_new_from_media(m))

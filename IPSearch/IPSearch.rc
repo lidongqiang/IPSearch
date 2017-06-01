@@ -16,7 +16,7 @@
 #undef APSTUDIO_READONLY_SYMBOLS
 
 /////////////////////////////////////////////////////////////////////////////
-// Chinese (P.R.C.) resources
+// 中文(中华人民共和国) resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_CHS)
 #ifdef _WIN32
@@ -70,9 +70,9 @@ END
 
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
+IDR_MAINFRAME3          ICON                    "res\\4.ico"
 IDR_MAINFRAME2          ICON                    "res\\IPSearch.ico"
 IDR_MAINFRAME1          ICON                    "res\\2.ico"
-IDR_MAINFRAME3          ICON                    "res\\4.ico"
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -115,7 +115,6 @@ BEGIN
     PUSHBUTTON      "通过",IDC_BUTTON_PASS,508,279,46,17
     PUSHBUTTON      "不通过",IDC_BUTTON_FAIL,560,279,46,17
     CONTROL         "",IDC_STATIC_VIDEO,"Static",SS_BLACKFRAME | SS_NOTIFY | SS_CENTERIMAGE | SS_REALSIZEIMAGE,7,7,476,332
-    CONTROL         150,IDC_STATIC_ICO,"Static",SS_BITMAP | SS_REALSIZEIMAGE,106,21,303,308
     PUSHBUTTON      "退出测试模式",IDC_BUTTON_EXIT,532,309,50,20
     GROUPBOX        "设备信息",IDC_STATIC_DEVICE,486,134,136,92
 END
@@ -341,7 +340,7 @@ BEGIN
     IDS_ABOUTBOX            "关于 IPSearch(&A)..."
 END
 
-#endif    // Chinese (P.R.C.) resources
+#endif    // 中文(中华人民共和国) resources
 /////////////////////////////////////////////////////////////////////////////
 
 
