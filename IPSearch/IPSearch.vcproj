@@ -152,8 +152,8 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="Ws2_32.lib Mpr.lib json.lib libvlc.lib libvlccore.lib"
-				OutputFile="$(OutDir)\IPCameraTool.exe"
+				AdditionalDependencies="Ws2_32.lib Mpr.lib json.lib"
+				OutputFile="$(OutDir)\PCBATool.exe"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="..\lib"
 				GenerateDebugInformation="true"
@@ -193,10 +193,6 @@
 			Filter="cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx"
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
-			<File
-				RelativePath=".\AVPlayer.cpp"
-				>
-			</File>
 			<File
 				RelativePath=".\BitConfigDlg.cpp"
 				>
@@ -265,20 +261,12 @@
 				RelativePath=".\UidDlg.cpp"
 				>
 			</File>
-			<File
-				RelativePath=".\VideoDlg.cpp"
-				>
-			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
-			<File
-				RelativePath=".\AVPlayer.h"
-				>
-			</File>
 			<File
 				RelativePath=".\BitConfigDlg.h"
 				>
@@ -335,10 +323,6 @@
 				RelativePath=".\UidDlg.h"
 				>
 			</File>
-			<File
-				RelativePath=".\VideoDlg.h"
-				>
-			</File>
 		</Filter>
 		<Filter
 			Name="Resource Files"
@@ -355,6 +339,14 @@
 			</File>
 			<File
 				RelativePath=".\res\4.ico"
+				>
+			</File>
+			<File
+				RelativePath=".\res\blue.ico"
+				>
+			</File>
+			<File
+				RelativePath=".\res\icon2.ico"
 				>
 			</File>
 			<File
@@ -451,6 +443,130 @@
 			</File>
 			<File
 				RelativePath=".\label\Label.h"
+				>
+			</File>
+		</Filter>
+		<Filter
+			Name="ListCtrlEx"
+			>
+			<File
+				RelativePath=".\ListCtrlEx\CGridColumnTrait.h"
+				>
+			</File>
+			<File
+				RelativePath=".\ListCtrlEx\CGridColumnTraitCombo.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\ListCtrlEx\CGridColumnTraitCombo.h"
+				>
+			</File>
+			<File
+				RelativePath=".\ListCtrlEx\CGridColumnTraitDateTime.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\ListCtrlEx\CGridColumnTraitDateTime.h"
+				>
+			</File>
+			<File
+				RelativePath=".\ListCtrlEx\CGridColumnTraitEdit.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\ListCtrlEx\CGridColumnTraitEdit.h"
+				>
+			</File>
+			<File
+				RelativePath=".\ListCtrlEx\CGridColumnTraitHyperLink.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\ListCtrlEx\CGridColumnTraitHyperLink.h"
+				>
+			</File>
+			<File
+				RelativePath=".\ListCtrlEx\CGridColumnTraitImage.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\ListCtrlEx\CGridColumnTraitImage.h"
+				>
+			</File>
+			<File
+				RelativePath=".\ListCtrlEx\CGridColumnTraitMultilineEdit.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\ListCtrlEx\CGridColumnTraitMultilineEdit.h"
+				>
+			</File>
+			<File
+				RelativePath=".\ListCtrlEx\CGridColumnTraitText.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\ListCtrlEx\CGridColumnTraitText.h"
+				>
+			</File>
+			<File
+				RelativePath=".\ListCtrlEx\CGridColumnTraitVisitor.h"
+				>
+			</File>
+			<File
+				RelativePath=".\ListCtrlEx\CGridListCtrlEx.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\ListCtrlEx\CGridListCtrlEx.h"
+				>
+			</File>
+			<File
+				RelativePath=".\ListCtrlEx\CGridListCtrlGroups.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\ListCtrlEx\CGridListCtrlGroups.h"
+				>
+			</File>
+			<File
+				RelativePath=".\ListCtrlEx\CGridRowTrait.h"
+				>
+			</File>
+			<File
+				RelativePath=".\ListCtrlEx\CGridRowTraitText.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\ListCtrlEx\CGridRowTraitText.h"
+				>
+			</File>
+			<File
+				RelativePath=".\ListCtrlEx\CGridRowTraitVisitor.h"
+				>
+			</File>
+			<File
+				RelativePath=".\ListCtrlEx\CGridRowTraitXP.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\ListCtrlEx\CGridRowTraitXP.h"
+				>
+			</File>
+			<File
+				RelativePath=".\ListCtrlEx\GridListCtrlColor.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\ListCtrlEx\GridListCtrlColor.h"
+				>
+			</File>
+			<File
+				RelativePath=".\ListCtrlEx\ViewConfigSection.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\ListCtrlEx\ViewConfigSection.h"
 				>
 			</File>
 		</Filter>

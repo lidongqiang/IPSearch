@@ -47,9 +47,13 @@ void CConfigDlg::OnBnClickedBtnOk()
 	m_Configs.bPtzTest    = (((CButton*)GetDlgItem(IDC_CHECK_PTZ))->GetCheck() == BST_CHECKED);
 	m_Configs.bIrcutTest    = (((CButton*)GetDlgItem(IDC_CHECK_IRCUT))->GetCheck() == BST_CHECKED);
 	m_Configs.bHdmiTest    = (((CButton*)GetDlgItem(IDC_CHECK_HDMI))->GetCheck() == BST_CHECKED);
-	m_Configs.bWriteUid    = (((CButton*)GetDlgItem(IDC_CHECK_UID))->GetCheck() == BST_CHECKED);
-	m_Configs.bWriteMac    = (((CButton*)GetDlgItem(IDC_CHECK_LANMAC))->GetCheck() == BST_CHECKED);
-	//m_Configs.SaveToolSetting(_T(""));
+	//m_Configs.bWriteUid    = (((CButton*)GetDlgItem(IDC_CHECK_UID))->GetCheck() == BST_CHECKED);
+	//m_Configs.bWriteMac    = (((CButton*)GetDlgItem(IDC_CHECK_LANMAC))->GetCheck() == BST_CHECKED);
+	m_Configs.bBtTest		 = (((CButton*)GetDlgItem(IDC_CHECK_BT))->GetCheck() == BST_CHECKED);
+	m_Configs.bEmmcTest		 = (((CButton*)GetDlgItem(IDC_CHECK_EMMC))->GetCheck() == BST_CHECKED);
+	m_Configs.bDdrTest		 = (((CButton*)GetDlgItem(IDC_CHECK_DDR))->GetCheck() == BST_CHECKED);
+	m_Configs.bRtcTest		 = (((CButton*)GetDlgItem(IDC_CHECK_RTC))->GetCheck() == BST_CHECKED);
+	m_Configs.bRotaryTest		 = (((CButton*)GetDlgItem(IDC_CHECK_ROTARY))->GetCheck() == BST_CHECKED);
 	CConfigDlg::OnOK();
 }
 
@@ -68,11 +72,14 @@ BOOL CConfigDlg::OnInitDialog()
 	((CButton*)GetDlgItem(IDC_CHECK_PTZ    ))->SetCheck(m_Configs.bPtzTest                ?BST_CHECKED:BST_UNCHECKED);
 	((CButton*)GetDlgItem(IDC_CHECK_IRCUT    ))->SetCheck(m_Configs.bIrcutTest                ?BST_CHECKED:BST_UNCHECKED);
 	((CButton*)GetDlgItem(IDC_CHECK_HDMI    ))->SetCheck(m_Configs.bHdmiTest               ?BST_CHECKED:BST_UNCHECKED);
-	((CButton*)GetDlgItem(IDC_CHECK_UID    ))->SetCheck(m_Configs.bWriteUid                ?BST_CHECKED:BST_UNCHECKED);
-	((CButton*)GetDlgItem(IDC_CHECK_LANMAC    ))->SetCheck(m_Configs.bWriteMac                ?BST_CHECKED:BST_UNCHECKED);
+	//((CButton*)GetDlgItem(IDC_CHECK_UID    ))->SetCheck(m_Configs.bWriteUid                ?BST_CHECKED:BST_UNCHECKED);
+	//((CButton*)GetDlgItem(IDC_CHECK_LANMAC    ))->SetCheck(m_Configs.bBtTest                ?BST_CHECKED:BST_UNCHECKED);
+	((CButton*)GetDlgItem(IDC_CHECK_BT    ))->SetCheck(m_Configs.bBtTest                ?BST_CHECKED:BST_UNCHECKED);
+	((CButton*)GetDlgItem(IDC_CHECK_EMMC    ))->SetCheck(m_Configs.bEmmcTest                ?BST_CHECKED:BST_UNCHECKED);
+	((CButton*)GetDlgItem(IDC_CHECK_DDR    ))->SetCheck(m_Configs.bDdrTest                ?BST_CHECKED:BST_UNCHECKED);
+	((CButton*)GetDlgItem(IDC_CHECK_RTC    ))->SetCheck(m_Configs.bRtcTest                ?BST_CHECKED:BST_UNCHECKED);
+	((CButton*)GetDlgItem(IDC_CHECK_ROTARY    ))->SetCheck(m_Configs.bRotaryTest                ?BST_CHECKED:BST_UNCHECKED);
 
-	this->GetDlgItem(IDC_CHECK_LED)->ShowWindow(FALSE);
-	this->GetDlgItem(IDC_CHECK_LED)->ShowWindow(FALSE);
 	return TRUE;  // return TRUE unless you set the focus to a control
 	// EXCEPTION: OCX Property Pages should return FALSE
 }

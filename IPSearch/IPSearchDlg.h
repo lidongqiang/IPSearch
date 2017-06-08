@@ -7,13 +7,13 @@
 #include "afxcmn.h"
 #include "settings/SettingBase.h"
 #include "ConfigDlg.h"
-#include "VideoDlg.h"
 #include "JsonConvert.h"
 #include "XListBox/XListBox.h"
 #include "label/FontStatic.h"
 #include "debug.h"
 #include "PcbaTest .h"
-#include "AVPlayer.h"
+//#include "AVPlayer.h"
+#include "ListCtrlEx/GridListCtrlColor.h"
 
 typedef struct  
 {
@@ -37,6 +37,7 @@ typedef struct
 	std::wstring strMac;
 }DevInfo,STRUCT_DEV_INFO;
 typedef vector<STRUCT_DEV_INFO> DEV_INFO_VECTOR;
+
 
 // CIPSearchDlg 对话框
 class CIPSearchDlg : public CDialog
@@ -62,8 +63,8 @@ protected:
 	afx_msg void OnPaint();
 	afx_msg HCURSOR OnQueryDragIcon();
 	DECLARE_MESSAGE_MAP()
-private:
-	CAVPlayer   m_cAVPlayer;        // 播放器类
+//private:
+//	CAVPlayer   m_cAVPlayer;        // 播放器类
 public:
 	CIniSettingBase m_Configs;
 	CIniLocalLan	m_LocalLan;
@@ -87,6 +88,7 @@ public:
 	CXListBox   m_listInfo;
 	CFontStatic m_lbVideo;
 	CLogger     *m_pLog;
+	CGridListCtrlColor m_listTestItem;
 public:
 	void initUi();
 	void GetOtherIp();
@@ -95,6 +97,7 @@ public:
 	void ParseDevInfo(char *msg,CString &strUid,CString &strAddr,CString &strDevname);
 	bool OnStartTest();
 	BOOL TestProc();
+	int ScanDeviceProc(_In_  LPVOID lpParameter);
 	BOOL RecvProc();
 	//void RecvThread();
 	int	 connect_dev();
@@ -107,12 +110,12 @@ public:
 	BOOL LoadConfig();
 	VOID WalkMenu(CMenu *pMenu,CString strMainKeyPart);
 	int DoTestItem(std::wstring strTestName,std::string &strInfo);
+	void UpdateTestitemList();
 public:
 	afx_msg void OnBnClickedBtnSerch();
 	afx_msg void OnBnClickedButtonTest();
 	afx_msg void OnNMClickListDevice(NMHDR *pNMHDR, LRESULT *pResult);
 	afx_msg void OnBnClickedBtnApply();
-	afx_msg void OnBnClickedBtnPlayer();
 	afx_msg void OnBnClickedButtonNext();
 	afx_msg LRESULT OnHandleUpdateConfigMsg(WPARAM wParam,LPARAM lParam);
 	afx_msg void OnBnClickedButtonPass();
@@ -121,4 +124,9 @@ public:
 	virtual BOOL PreTranslateMessage(MSG* pMsg);
 	afx_msg void OnHelpAbout();
 	afx_msg void OnBnClickedButtonExit();
+	afx_msg LRESULT OnHandleUpdateTestinfoMsg(WPARAM wParam,LPARAM lParam);
 };
+typedef struct{
+	CIPSearchDlg *pDlg;
+	char *ip;
+}ThreadInfo;

@@ -122,10 +122,10 @@ int CPcbaTest::StartTestItem(SOCKET TestSocket,std::string TestName,std::string 
 	int ret,nErrCode;
 
 	ret = UploadFile(TestName);
-	if (ret < 0)
-	{
-		return -101;
-	}
+	//if (ret < 0)
+	//{
+	//	return -101;
+	//}
 	LOGER((CLogger::DEBUG_DUT,"StartTestItem()"));
 
 	//1.发送命令给设备端开始测试 {"TYPE":"CMD", "TEST ITEM":"KEY-TEST", "CMD":"START" }
@@ -456,7 +456,7 @@ int CPcbaTest::MonitorTest(SOCKET TestSocket,std::string TestName)
 
 int CPcbaTest::InterphoneTest(SOCKET TestSocket,std::string TestName)
 {
-	UploadFile("play_test.wav");
+	//UploadFile("play_test.wav");
 	return StartTestItem(TestSocket,TestName,"-c play");
 }
 int CPcbaTest::SdCardTest(SOCKET TestSocket,std::string TestName)
@@ -471,6 +471,26 @@ int CPcbaTest::LedTest(SOCKET TestSocket,std::string TestName)
 {
 	return StartTestItem(TestSocket,TestName);
 }
+int CPcbaTest::BtTest(SOCKET TestSocket,std::string TestName)
+{
+	return StartTestItem(TestSocket,TestName);
+}
+int CPcbaTest::EmmcTest(SOCKET TestSocket,std::string TestName)
+{
+	return StartTestItem(TestSocket,TestName);
+}
+int CPcbaTest::DdrTest(SOCKET TestSocket,std::string TestName)
+{
+	return StartTestItem(TestSocket,TestName);
+}
+int CPcbaTest::RtcTest(SOCKET TestSocket,std::string TestName)
+{
+	return StartTestItem(TestSocket,TestName);
+}
+int CPcbaTest::RotaryTest(SOCKET TestSocket,std::string TestName)
+{
+	return StartTestItem(TestSocket,TestName);
+}
 int CPcbaTest::HdmiTest(SOCKET TestSocket,std::string TestName)
 {
 	return StartTestItem(TestSocket,TestName);
@@ -481,7 +501,6 @@ int CPcbaTest::PtzTest(SOCKET TestSocket,std::string TestName)
 }
 int CPcbaTest::WifiTest(SOCKET TestSocket,std::string TestName)
 {
-	UploadFile("wifi.sh");
 	return StartTestItem(TestSocket,TestName);
 }
 int CPcbaTest::CameraTest(SOCKET TestSocket,std::string TestName)

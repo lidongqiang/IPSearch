@@ -286,7 +286,7 @@ bool CIniSettingBase::LoadToolSetting(std::wstring strConfig)
 	///********************** System config **********************/
 	szLan                   = GetStr(TEXT("CONFIG:Lan"));
 	bDebug              = 1 == _wtoi(GetStr(TEXT("Debug")).c_str());
-	bSdcardTest			= 1 == _wtoi(GetStr(TEXT("EmmcTest")).c_str());
+	bSdcardTest			= 1 == _wtoi(GetStr(TEXT("SdcardTest")).c_str());
 	bWifiTest			= 1 == _wtoi(GetStr(TEXT("WifiTest")).c_str());
 	bKeyTest			= 1 == _wtoi(GetStr(TEXT("KeyTest")).c_str());
 	bLedTest			= 1 == _wtoi(GetStr(TEXT("LedTest")).c_str());
@@ -297,7 +297,12 @@ bool CIniSettingBase::LoadToolSetting(std::wstring strConfig)
 	bIrcutTest			= 1 == _wtoi(GetStr(TEXT("IrcutTest")).c_str());
 	bWriteUid			= 1 == _wtoi(GetStr(TEXT("WriteUid")).c_str());
 	bWriteMac			= 1 == _wtoi(GetStr(TEXT("WriteMac")).c_str());
-	strSdcardName		= GetStr(TEXT("EmmcName"));
+	bBtTest				= 1 == _wtoi(GetStr(TEXT("BtTest")).c_str());
+	bEmmcTest			= 1 == _wtoi(GetStr(TEXT("EmmcTest")).c_str());
+	bDdrTest			= 1 == _wtoi(GetStr(TEXT("DdrTest")).c_str());
+	bRtcTest			= 1 == _wtoi(GetStr(TEXT("RtcTest")).c_str());
+	bRotaryTest			= 1 == _wtoi(GetStr(TEXT("RotaryTest")).c_str());
+	strSdcardName		= GetStr(TEXT("SdcardName"));
 	strWifiName			= GetStr(TEXT("WifiName"));
 	strKeyName			= GetStr(TEXT("KeyName"));
 	strMonitorName		= GetStr(TEXT("MonitorName"));
@@ -308,6 +313,12 @@ bool CIniSettingBase::LoadToolSetting(std::wstring strConfig)
 	strCameraName		= GetStr(TEXT("CameraName"));
 	strLedName			= GetStr(TEXT("LedName"));
 	strWriteName		= GetStr(TEXT("WriteName"));
+	strBtTest			= GetStr(TEXT("BtName"));
+	strEmmcTest			= GetStr(TEXT("EmmcName"));
+	strDdrTest			= GetStr(TEXT("DdrName"));
+	strRtcTest			= GetStr(TEXT("RtcName"));
+	strRotaryTest		= GetStr(TEXT("RotaryName"));
+
 	strLogPath              = GetStr(TEXT("LogPath"));
 	nLogLevel           = _wtoi(GetStr(TEXT("LogLevel")).c_str());
 	strTestPath              = GetStr(TEXT("TestPath"));
@@ -404,7 +415,7 @@ bool CIniSettingBase::SaveToolSetting(std::wstring strConfig)
 
 	if(pIniFile) {
 		SetStr( TEXT("CONFIG:Lan")  	, szLan);
-		SetStr( TEXT("EmmcTest")			, bSdcardTest   ?checke:unckeck);
+		SetStr( TEXT("SdcardTest")			, bSdcardTest   ?checke:unckeck);
 		SetStr( TEXT("WifiTest")    		, bWifiTest ?checke:unckeck);
 		SetStr( TEXT("KeyTest")    		, bKeyTest ?checke:unckeck);
 		SetStr( TEXT("LedTest")    		, bLedTest ?checke:unckeck);
@@ -413,6 +424,12 @@ bool CIniSettingBase::SaveToolSetting(std::wstring strConfig)
 		SetStr( TEXT("PtzTest")    		, bPtzTest ?checke:unckeck);
 		SetStr( TEXT("HdmiTest")    		, bHdmiTest ?checke:unckeck);
 		SetStr( TEXT("IrcutTest")    		, bIrcutTest ?checke:unckeck);
+		SetStr( TEXT("BtTest")    		, bBtTest ?checke:unckeck);
+		SetStr( TEXT("LedTest")    		, bLedTest ?checke:unckeck);
+		SetStr( TEXT("DdrTest")    		, bDdrTest ?checke:unckeck);
+		SetStr( TEXT("EmmcTest")    		, bEmmcTest ?checke:unckeck);
+		SetStr( TEXT("RtcTest")    		, bRtcTest ?checke:unckeck);
+		SetStr( TEXT("RotaryTest")    		, bRotaryTest ?checke:unckeck);
 		SetStr( TEXT("WriteUid")    		, bWriteUid ?checke:unckeck);
 		SetStr( TEXT("WriteMac")    		, bWriteMac ?checke:unckeck);
 		SetStr( TEXT("LogPath")     	, strLogPath);

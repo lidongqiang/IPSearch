@@ -1,7 +1,7 @@
 #ifndef _SETTINGBASE_H_
 #define _SETTINGBASE_H_
 #define USER_LOGIN
-#define APP_VERSION " V1.0.4"
+#define APP_VERSION " V1.0.0"
 #include "inifile.h"
 //#include "../config.h"
 
@@ -184,6 +184,18 @@ public:
 	bool bIrcutTest;
 	bool bWriteUid;
 	bool bWriteMac;
+
+	//echo
+	bool bBtTest;
+	bool bEmmcTest;
+	bool bDdrTest;
+	bool bRtcTest;
+	bool bRotaryTest;
+	std::wstring strBtTest;
+	std::wstring strEmmcTest;
+	std::wstring strDdrTest;
+	std::wstring strRtcTest;
+	std::wstring strRotaryTest;
 };
 class CIniLocalLan:public CSettingBase
 {

@@ -11,21 +11,21 @@
 #define IDR_HTML_PLAYERDLG              106
 #define IDR_HTML_TESTDLG                107
 #define IDR_MAINFRAME                   128
-#define IDR_MAINFRAME2                  138
+#define IDR_MAINFRAME4                  128
 #define IDD_SETTING_DIALOG              129
 #define IDD_TEST_DIALOG                 132
 #define IDD_BITCONFIG_DIALOG            132
 #define IDD_PLAYER_DIALOG               133
-#define IDD_VIDEO_DIALOG                133
 #define IDD_UID_DIALOG                  134
+#define IDR_MAINFRAME2                  138
 #define IDI_ICON1                       138
-#define IDR_MAINFRAME1                  142
 #define IDB_BITMAP_LOGO                 140
 #define IDR_MAINMENU                    141
-#define IDR_MAINFRAME3                  128
+#define IDR_MAINFRAME1                  142
 #define IDB_BITMAP1                     146
 #define IDB_BITMAP2                     150
 #define IDB_BITMAP3                     151
+#define IDR_MAINFRAME3                  153
 #define ID_BTN_SERCH                    1001
 #define IDC_LIST_DEVICE                 1002
 #define IDC_EDIT_IP                     1003
@@ -60,12 +60,12 @@
 #define IDC_CHECK_UID                   1020
 #define ID_BTN_OK                       1021
 #define ID_BTN_CANCEL                   1022
+#define IDC_CHECK_BT                    1023
 #define IDC_BTN_PLAYER                  1024
-#define IDC_EDIT_URL                    1035
-#define IDC_STATIC_URL                  1036
-#define ID_BTN_PLAY                     1037
-#define ID_BTN_CONFIG                   1038
-#define IDC_STATIC_VIDEO                1039
+#define IDC_CHECK_RTC                   1024
+#define IDC_CHECK_EMMC                  1025
+#define IDC_CHECK_DDR                   1026
+#define IDC_CHECK_ROTARY                1027
 #define IDC_EDIT1                       1040
 #define IDC_EDIT2                       1041
 #define IDC_COMBO1                      1042
@@ -96,6 +96,7 @@
 #define IDC_STATIC_DEVICE               1055
 #define IDC_EDIT12                      1056
 #define IDC_EDIT13                      1057
+#define IDC_LIST_TESTITEM               1058
 #define ID_ABOUT_VERSION                32771
 #define ID_ABOUT_LANGUAGE               32772
 #define ID_HELP_ABOUT                   32773
@@ -105,9 +106,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        152
+#define _APS_NEXT_RESOURCE_VALUE        154
 #define _APS_NEXT_COMMAND_VALUE         32775
-#define _APS_NEXT_CONTROL_VALUE         1056
+#define _APS_NEXT_CONTROL_VALUE         1059
 #define _APS_NEXT_SYMED_VALUE           108
 #endif
 #endif

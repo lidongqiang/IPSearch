@@ -54,7 +54,20 @@ static std::wstring str2wstr(const std::string& arg)
 	return res;
 }
 
+UINT ScanDeviceThread(LPVOID lpParam)
+{
+	ThreadInfo*   pParam   =   (ThreadInfo   *)lpParam; 
+	CIPSearchDlg* pMainDlg = (CIPSearchDlg*)pParam->pDlg;
+	pMainDlg->ScanDeviceProc(pParam->ip);
+	return 0;
+}
 UINT TestDeviceThread(LPVOID lpParam)
+{
+	CIPSearchDlg* pMainDlg = (CIPSearchDlg*)lpParam;
+	pMainDlg->TestProc();
+	return 0;
+}
+UINT NextTestThread(LPVOID lpParam)
 {
 	CIPSearchDlg* pMainDlg = (CIPSearchDlg*)lpParam;
 	pMainDlg->TestProc();
@@ -66,6 +79,7 @@ UINT RecvDeviceThread(LPVOID lpParam)
 	pMainDlg->RecvProc();
 	return 0;
 }
+
 // 用于应用程序“关于”菜单项的 CAboutDlg 对话框
 
 class CAboutDlg : public CDialog
@@ -138,7 +152,7 @@ END_MESSAGE_MAP()
 CIPSearchDlg::CIPSearchDlg(CWnd* pParent /*=NULL*/)
 	: CDialog(CIPSearchDlg::IDD, pParent),m_listSelect(-1),m_bRun(false),m_bTestPass(false)
 {
-	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME3);
+	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME4);
 }
 
 void CIPSearchDlg::DoDataExchange(CDataExchange* pDX)
@@ -146,7 +160,7 @@ void CIPSearchDlg::DoDataExchange(CDataExchange* pDX)
 	CDialog::DoDataExchange(pDX);
 	DDX_Control(pDX, IDC_LIST_DEVICE, m_listDevice);
 	DDX_Control(pDX, IDC_LIST_INFO, m_listInfo);
-	//DDX_Control(pDX, IDC_STATIC_VIDEO, m_lbVideo);
+	DDX_Control(pDX, IDC_LIST_TESTITEM, m_listTestItem);
 }
 
 BEGIN_MESSAGE_MAP(CIPSearchDlg, CDialog)
@@ -159,13 +173,13 @@ BEGIN_MESSAGE_MAP(CIPSearchDlg, CDialog)
 	ON_BN_CLICKED(IDC_BUTTON_TEST, &CIPSearchDlg::OnBnClickedButtonTest)
 	ON_NOTIFY(NM_CLICK, IDC_LIST_DEVICE, &CIPSearchDlg::OnNMClickListDevice)
 	ON_BN_CLICKED(ID_BTN_APPLY, &CIPSearchDlg::OnBnClickedBtnApply)
-	ON_BN_CLICKED(IDC_BTN_PLAYER, &CIPSearchDlg::OnBnClickedBtnPlayer)
 	ON_BN_CLICKED(IDC_BUTTON_NEXT, &CIPSearchDlg::OnBnClickedButtonNext)
 	ON_BN_CLICKED(IDC_BUTTON_PASS, &CIPSearchDlg::OnBnClickedButtonPass)
 	ON_BN_CLICKED(IDC_BUTTON_FAIL, &CIPSearchDlg::OnBnClickedButtonFail)
 	ON_WM_CLOSE()
 	ON_COMMAND(ID_HELP_ABOUT, &CIPSearchDlg::OnHelpAbout)
 	ON_BN_CLICKED(IDC_BUTTON_EXIT, &CIPSearchDlg::OnBnClickedButtonExit)
+	ON_MESSAGE(WM_UPDATE_TESTINFO_MSG,&CIPSearchDlg::OnHandleUpdateTestinfoMsg)
 END_MESSAGE_MAP()
 
 
@@ -207,8 +221,6 @@ BOOL CIPSearchDlg::OnInitDialog()
 
 	initUi();
 
-	//rtsp播放设置
-	m_cAVPlayer.SetHWND(GetDlgItem(IDC_STATIC_VIDEO)->GetSafeHwnd()); 
 	//加载config.ini
 	if (!LoadConfig())
 	{
@@ -227,10 +239,11 @@ BOOL CIPSearchDlg::OnInitDialog()
 	if(m_Configs.nLogLevel != DLEVEL_NONE ) {
 		CLogger::DEBUG_LEVEL level = m_Configs.nLogLevel == DLEVEL_DEBUG?CLogger::DEBUG_ALL:
 			(m_Configs.nLogLevel  == DLEVEL_INFO ?CLogger::DEBUG_INFO:CLogger::DEBUG_ERROR);
-	m_pLog = CLogger::StartLog((m_Configs.strLogPath + TEXT("IPCameraTool-") + CLogger::TimeStr(true, true)).c_str(), level);    
+	m_pLog = CLogger::StartLog((m_Configs.strLogPath + TEXT("PCBATool-") + CLogger::TimeStr(true, true)).c_str(), level);    
 	}
 
-	LDEGMSGW((CLogger::DEBUG_INFO, _T("IPCameraTool start run")));
+	LDEGMSGW((CLogger::DEBUG_INFO, _T("PCBATool(echo) start run")));
+	UpdateTestitemList();
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
 
@@ -239,9 +252,38 @@ void CIPSearchDlg::initUi()
 	m_pRecvThread = NULL;
 	CRect rect;   
 	// 获取编程语言列表视图控件的位置和大小   
-	m_listDevice.GetClientRect(&rect);   
+	m_listTestItem.GetClientRect(&rect);   
 
 	// 为列表视图控件添加全行选中和栅格风格   
+	m_listTestItem.SetExtendedStyle(m_listTestItem.GetExtendedStyle() | LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES);  
+	m_listTestItem.InsertColumn(0,_T("测试项"),LVCFMT_CENTER, rect.Width()/2, 0);
+	m_listTestItem.InsertColumn(1,_T("类别"),LVCFMT_CENTER, rect.Width()/4, 1);
+	m_listTestItem.InsertColumn(2,_T("测试状态"),LVCFMT_CENTER, rect.Width()/4, 2);
+	m_listTestItem.DeleteAllItems();
+	LOGFONT logFont;
+	ZeroMemory(&logFont,sizeof(logFont));
+	logFont.lfHeight = -20;
+	logFont.lfWidth = 10;
+	logFont.lfWeight = FW_NORMAL;
+	logFont.lfCharSet = GB2312_CHARSET;
+	_tcscpy(logFont.lfFaceName,_T("宋体"));
+
+	m_listTestItem.SetColFont(0,logFont);
+	m_listTestItem.SetColFont(1,logFont);
+
+	logFont.lfHeight = -20;
+	logFont.lfWidth = 10;
+	logFont.lfWeight = FW_BOLD;
+	m_listTestItem.SetColFont(2,logFont);
+	
+	HFONT hFont;
+	hFont = CreateFontIndirect(&logFont);
+	GetDlgItem(IDC_LIST_TESTITEM)->SendMessage(WM_SETFONT, (WPARAM)hFont, TRUE);
+
+	m_listTestItem.SetHeaderCtrlFont(logFont);
+
+	// 获取编程语言列表视图控件的位置和大小   
+	m_listDevice.GetClientRect(&rect); 
 	m_listDevice.SetExtendedStyle(m_listDevice.GetExtendedStyle() | LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES);  
 	m_listDevice.InsertColumn(0,_T("UID"),LVCFMT_CENTER, rect.Width()/4, 0);
 	m_listDevice.InsertColumn(1,_T("IP"),LVCFMT_CENTER, rect.Width()/2, 1);
@@ -258,7 +300,6 @@ void CIPSearchDlg::initUi()
 	//m_lbVideo.SetBackground(RGB(0,0,0));
 
 	GetDlgItem(IDC_BUTTON_EXIT)->ShowWindow(FALSE);
-	GetDlgItem(IDC_BTN_PLAYER)->EnableWindow(FALSE);
 	GetDlgItem(IDC_BUTTON_PASS)->EnableWindow(FALSE);
 	GetDlgItem(IDC_BUTTON_FAIL)->EnableWindow(FALSE);
 }
@@ -396,15 +437,6 @@ void CIPSearchDlg::OnPaint()
 	}
 	else
 	{
-		CClientDC dc(this);
-		CBrush m_brush(RGB(0,0,0));
-
-		CStatic *frame=(CStatic *)GetDlgItem(IDC_STATIC_VIDEO);
-		CRect rect;
-		frame->GetWindowRect(rect);
-		ScreenToClient(rect);
-		dc.FillRect(rect,&m_brush);
-		m_cAVPlayer.SetHWND(GetDlgItem(IDC_STATIC_VIDEO)->GetSafeHwnd()); 
 		CDialog::OnPaint();
 	}
 }
@@ -425,8 +457,13 @@ void CIPSearchDlg::OnBnClickedBtnSerch()
 	STRUCT_DEV_INFO DevInfo;
 	m_DevList.clear();
 	m_listDevice.DeleteAllItems();
+	CWinThread *pA = NULL;
+	HANDLE hThread[3];
+	int i = 0;
+	ThreadInfo param;
 
 	this->GetDlgItem(ID_BTN_SERCH)->EnableWindow(FALSE);
+
 	WORD wVersionRequested = MAKEWORD(2, 2);  
 	WSADATA wsaData;  
 	if(0 != WSAStartup(wVersionRequested, &wsaData))  
@@ -439,73 +476,32 @@ void CIPSearchDlg::OnBnClickedBtnSerch()
 		AfxMessageBox(_T("Socket version not supported./n"));
 		WSACleanup();  
 		return ;  
-	}  
-	SOCKET sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);  
-	if(INVALID_SOCKET == sock)  
-	{  
-		AfxMessageBox(_T("socket failed with error: %d/n"), GetLastError());
-		WSACleanup();  
-		return ;  
-	}  
-
-	SOCKADDR_IN addr;  
-	memset(&addr, 0, sizeof(addr));  
-	addr.sin_family = AF_INET;  
-	addr.sin_addr.S_un.S_addr = htonl(INADDR_BROADCAST);
-	addr.sin_port = htons(18889);  
-	BOOL bBoardcast = TRUE; 
-	int len = sizeof(addr);
-	if(SOCKET_ERROR == setsockopt(sock, SOL_SOCKET, SO_BROADCAST, (char*)&bBoardcast, sizeof(bBoardcast)))  
-	{  
-		printf("setsockopt failed with error code: %d/n", WSAGetLastError());  
-		if(INVALID_SOCKET != sock)  
-		{  
-			closesocket(sock);  
-			sock = INVALID_SOCKET;  
-		}  
-		WSACleanup();  
 	}
-	//int iMode = 1; //0：阻塞
-	//ioctlsocket(sock,FIONBIO, (u_long FAR*) &iMode);//非阻塞设置
-	int nNetTimeout=3000;//1秒，
-	//设置发送超时
-	setsockopt(sock,SOL_SOCKET,SO_SNDTIMEO,(char *)&nNetTimeout,sizeof(int));
-	//设置接收超时
-	setsockopt(sock,SOL_SOCKET,SO_RCVTIMEO,(char *)&nNetTimeout,sizeof(int));
-	char szBuf[MAX_BUFFER] = {0};
-	char buf[] = {"CMD_DISCOVER"};
-	int n = 10;
-	int nIndex = 0;
-	if(SOCKET_ERROR == sendto(sock, buf, sizeof(buf), 0, (LPSOCKADDR)&addr, sizeof(addr)))  
-	{  
-		AfxMessageBox(_T("sendto failed with error: %d\n"));
+	char hostname[1024] = {0};
+	gethostname(hostname, sizeof(hostname));    //获得本地主机名
+	PHOSTENT hostinfo = gethostbyname(hostname);//信息结构体
+	while(*(hostinfo->h_addr_list) != NULL)        //输出IP地址
+	{
+		param.ip = inet_ntoa(*(struct in_addr *) *hostinfo->h_addr_list);
+		param.pDlg = this;
+		pA = AfxBeginThread(ScanDeviceThread,&param);
+		hThread[i++] = pA->m_hThread;
+		hostinfo->h_addr_list++;
+		::WaitForSingleObject(pA->m_hThread,INFINITE);
 	}
-	while(1)  
-	{  
-		memset(szBuf,0,255);
-		if (SOCKET_ERROR == recvfrom(sock, szBuf, 255, 0, (LPSOCKADDR)&addr, &len))
-		{
-			break;
-		}
-		if (strlen(szBuf) != 0)
-		{
-			m_Json.JsontoItem("UID",strUid,"IP",strAddr,"DEVICENAME",strDevname,"MAC",strMac,szBuf);
-			DevInfo.strUid = str2wstr(strUid);
-			DevInfo.strIP = str2wstr(strAddr);
-			DevInfo.strDevName = str2wstr(strDevname);
-			DevInfo.strMac = str2wstr(strMac);
-			m_DevList.push_back(DevInfo);
-			//this->SetDlgItemText(IDC_EDIT_PORT,str2wstr(strMac).c_str());
-			m_listDevice.InsertItem(nIndex,_T(""));
-			m_listDevice.SetItemText(nIndex,0,str2wstr(strUid).c_str());
-			m_listDevice.SetItemText(nIndex,1,str2wstr(strAddr).c_str());
-			m_listDevice.SetItemText(nIndex,2,str2wstr(strDevname).c_str());
-			nIndex++;
-		}
-		Sleep(100);  
-	}  
+	//Wait until all threads have terminated.
+	//::WaitForMultipleObjects(i-1,hThread,TRUE,INFINITE);
+	int nIndex;
+	for (nIndex=0;nIndex<m_DevList.size();nIndex++)
+	{
+		m_listDevice.InsertItem(nIndex,_T(""));
+		m_listDevice.SetItemText(nIndex,0,m_DevList[nIndex].strUid.c_str());
+		m_listDevice.SetItemText(nIndex,1,m_DevList[nIndex].strIP.c_str());
+		m_listDevice.SetItemText(nIndex,2,m_DevList[nIndex].strDevName.c_str());
+	}
 
 	WSACleanup();
+
 	if (nIndex==0)
 	{
 		MessageBox(GetLocalString(_T("IDS_SEARCH_NODEVICE")).c_str(),_T("IPCamera"),MB_OK|MB_ICONWARNING);
@@ -641,8 +637,9 @@ void CIPSearchDlg::OnBnClickedButtonTest()
 		Sleep(500);
 		ExitTest();
 		closesocket(m_TestSocket);
+		UpdateTestitemList();
 
-		m_cAVPlayer.Stop();
+		//m_cAVPlayer.Stop();
 		this->SetDlgItemText(IDC_BUTTON_TEST,GetLocalString(_T("START")).c_str());
 		this->GetDlgItem(IDC_LIST_DEVICE)->EnableWindow(TRUE);
 		this->GetDlgItem(ID_BTN_APPLY)->EnableWindow(TRUE);
@@ -710,7 +707,7 @@ void CIPSearchDlg::RtspPlay()
 	Sleep(1000);
 	CString strUrl;
 	strUrl.Format(_T("rtsp://%s/webcam"),m_strIp);
-	m_cAVPlayer.Play(wstr2str((LPCTSTR)strUrl));
+	//m_cAVPlayer.Play(wstr2str((LPCTSTR)strUrl));
 }
 void CIPSearchDlg::OnBnClickedBtnApply()
 {
@@ -719,8 +716,100 @@ void CIPSearchDlg::OnBnClickedBtnApply()
 	if (IDOK == ConfgDlg.DoModal())
 	{
 		m_Configs.SaveToolSetting(std::wstring(TEXT("")));
+		UpdateTestitemList();
 	}
 
+}
+int CIPSearchDlg::ScanDeviceProc(LPVOID lpParameter)
+{
+	std::string strUid,strAddr,strDevname,strMac;
+	STRUCT_DEV_INFO DevInfo;
+	char	szIp[16] = {0};
+	strcpy (szIp, (char*)lpParameter);
+	WORD wVersionRequested = MAKEWORD(2, 2);  
+	WSADATA wsaData;  
+	if(0 != WSAStartup(wVersionRequested, &wsaData))  
+	{  
+		AfxMessageBox(_T("WSAStartup failed with error: %d/n"), GetLastError());
+		return -1;  
+	}  
+	if(2 != HIBYTE(wsaData.wVersion) || 2 != LOBYTE(wsaData.wVersion))  
+	{  
+		AfxMessageBox(_T("Socket version not supported./n"));
+		WSACleanup();  
+		return -2;  
+	}  
+
+	SOCKET sockClient	= socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+	if (SOCKET_ERROR == sockClient)
+	{
+		//printf ("socket create failed. ip=[%s] errno=[%d] ", szIp, WSAGetLastError());
+		AfxMessageBox(_T("socket create failed. ip=[%s] errno=[%d] "));
+		return	-2;
+	}
+	BOOL bBroadcast = TRUE;                             
+	if (0 != setsockopt ( sockClient,SOL_SOCKET,SO_BROADCAST, (CHAR *)&bBroadcast, sizeof(BOOL)))
+	{
+		AfxMessageBox (_T("setsockopt failed. ip=[%s] errno=[%d]"));
+		return	-3;
+	}
+	//int iMode = 1; //0：阻塞
+	//ioctlsocket(sock,FIONBIO, (u_long FAR*) &iMode);//非阻塞设置
+	int nNetTimeout=3000;//1秒，
+	//设置发送超时
+	setsockopt(sockClient,SOL_SOCKET,SO_SNDTIMEO,(char *)&nNetTimeout,sizeof(int));
+	//设置接收超时
+	setsockopt(sockClient,SOL_SOCKET,SO_RCVTIMEO,(char *)&nNetTimeout,sizeof(int));
+	SOCKADDR_IN	addrClient	= {0};
+	addrClient.sin_family	= AF_INET;
+	addrClient.sin_addr.s_addr	= inet_addr(szIp);
+	addrClient.sin_port	= 0;	/// 0 表示由系统自动分配端口号
+	if (0 != bind (sockClient, (sockaddr*)&addrClient, sizeof(addrClient)))
+	{
+		AfxMessageBox (_T("bind failed.ip=[%s] errno=[%d]\n"));
+	}
+	SOCKADDR_IN addrServer; 
+	memset(&addrServer, 0, sizeof(addrServer));  
+	addrServer.sin_family = AF_INET;
+	addrServer.sin_addr.s_addr = htonl(INADDR_BROADCAST);
+	addrServer.sin_port = htons (18888);
+	int len = sizeof(addrServer);
+
+	char szBuf[MAX_BUFFER] = {0};
+	char buf[] = {"CMD_DISCOVER"};
+	int n = 10;
+	int nIndex = 0;
+	if(SOCKET_ERROR == sendto(sockClient, buf, sizeof(buf), 0, (LPSOCKADDR)&addrServer, sizeof(SOCKADDR_IN)))  
+	{  
+		AfxMessageBox(_T("sendto failed with error: %d\n"));
+	}
+	while(1)  
+	{  
+		memset(szBuf,0,255);
+		if (SOCKET_ERROR == recvfrom(sockClient, szBuf, 255, 0, (LPSOCKADDR)&addrServer, &len))
+		{
+			break;
+		}
+		if (strlen(szBuf) != 0)
+		{
+			m_Json.JsontoItem("UID",strUid,"IP",strAddr,"DEVICENAME",strDevname,"MAC",strMac,szBuf);
+			DevInfo.strUid = str2wstr(strUid);
+			DevInfo.strIP = str2wstr(strAddr);
+			DevInfo.strDevName = str2wstr(strDevname);
+			DevInfo.strMac = str2wstr(strMac);
+			m_DevList.push_back(DevInfo);
+			//this->SetDlgItemText(IDC_EDIT_PORT,str2wstr(strMac).c_str());
+			//m_listDevice.InsertItem(nIndex,_T(""));
+			//m_listDevice.SetItemText(nIndex,0,str2wstr(strUid).c_str());
+			//m_listDevice.SetItemText(nIndex,1,str2wstr(strAddr).c_str());
+			//m_listDevice.SetItemText(nIndex,2,str2wstr(strDevname).c_str());
+			nIndex++;
+		}
+		Sleep(100);  
+	}  
+	closesocket(sockClient); 
+	WSACleanup();
+	return	0;
 }
 BOOL CIPSearchDlg::TestProc()
 {
@@ -787,46 +876,39 @@ BOOL CIPSearchDlg::TestProc()
 	{
 		goto TestExit;
 	}
-	RtspPlay();
-	Sleep(500);
-	//3.创建接收设备端的消息的线程，专门用于接收设备端消息
-	//m_pRecvThread = AfxBeginThread(RecvDeviceThread,this);
 
-	//if (m_TestCaseList.size()==0)
-	//{
-	//	WritePara();
-	//}
 	//4.下载测试程序，发送开始测试命令，{"TYPE":"CMD", "TEST_ITEM":"KEY-TEST", "CMD":"START" }
 	for (i=0;i<m_TestCaseList.size();i++)
 	{
 		if (m_TestCaseList[i].nTestStatus == 0)
 		{
-			//所有自动测试项完，第一个人工测试项
-			if (!m_TestCaseList[i].bAuto)
-			{
-				break;
-			}
-
 			strPrompt.Format(_T("%s:%s"),GetLocalString(m_TestCaseList[i].TestName).c_str(),GetLocalString(_T("IDS_TESTING")).c_str());
 			AddPrompt(strPrompt,FALSE,LIST_WARN);
 			ret = DoTestItem(m_TestCaseList[i].TestName,strOutput);
 			m_TestCaseList[i].nTestStatus = 1;
+			PostMessage(WM_UPDATE_TESTINFO_MSG,0,0);
 			if (ret<0)
 			{
 				m_TestCaseList[i].nTestStatus = -1;
 				strPrompt.Format(GetLocalString(_T("FAILED")).c_str(),GetLocalString(m_TestCaseList[i].TestName).c_str(),ret);
 				AddPrompt(strPrompt,TRUE);
+				PostMessage(WM_UPDATE_TESTINFO_MSG,0,0);
 				goto TestExit;
 			}
-			//else if (ret == 2)
-			//{
-			//	//strPrompt.Format(_T("%s测试:%s按键按下"),m_TestCaseList[i].TestName.c_str(),str2wstr(strOutput).c_str());
-			//	strPrompt.Format(GetLocalString(_T("IDS_KEY_DOWN")).c_str(),str2wstr(strOutput).c_str());
-			//	AddPrompt(strPrompt);
-			//}
-
+			else if (ret == 2)
+			{
+				strPrompt.Format(GetLocalString(_T("IDS_KEY_DOWN")).c_str(),str2wstr(strOutput).c_str());
+				AddPrompt(strPrompt);
+			}
+			//所有自动测试项完，第一个人工测试项
+			if (!m_TestCaseList[i].bAuto)
+			{
+				break;
+			}
 		}
 	}
+	GetDlgItem(IDC_BUTTON_PASS)->EnableWindow(TRUE);
+	GetDlgItem(IDC_BUTTON_FAIL)->EnableWindow(TRUE);
 	while(bQuery)
 	{
 		bQuery = false;
@@ -844,12 +926,14 @@ BOOL CIPSearchDlg::TestProc()
 						m_TestCaseList[i].nTestStatus = -1;
 						strPrompt.Format(GetLocalString(_T("IDS_STOP_TEST_FAIL")).c_str(),GetLocalString(m_TestCaseList[i].TestName).c_str(),ret);
 						AddPrompt(strPrompt,TRUE);
+						PostMessage(WM_UPDATE_TESTINFO_MSG,0,0);
 					}
 					else
 					{
 						m_TestCaseList[i].nTestStatus = 2;
 						strPrompt.Format(GetLocalString(_T("SUCCESS")).c_str(),GetLocalString(m_TestCaseList[i].TestName).c_str());
 						AddPrompt(strPrompt,FALSE,LIST_PASS);
+						PostMessage(WM_UPDATE_TESTINFO_MSG,0,0);
 					}
 				}
 				else if (ret < 0)
@@ -857,6 +941,7 @@ BOOL CIPSearchDlg::TestProc()
 					strPrompt.Format(GetLocalString(_T("FAILED")).c_str(),GetLocalString(m_TestCaseList[i].TestName).c_str(),ret);
 					AddPrompt(strPrompt,TRUE);
 					m_TestCaseList[i].nTestStatus = -1;
+					PostMessage(WM_UPDATE_TESTINFO_MSG,0,0);
 				}
 			}
 		}
@@ -871,55 +956,56 @@ BOOL CIPSearchDlg::TestProc()
 	{
 		goto TestExit;
 	}
-	for (i=0;i<m_TestCaseList.size();i++)
-	{
-		if (!m_bRun)
-		{
-			goto TestExit;
-		}
-		if (m_TestCaseList[i].nTestStatus == 0)
-		{
-			bMaunlTest = true;
-			strPrompt.Format(_T("%s:%s"),GetLocalString(m_TestCaseList[i].TestName).c_str(),GetLocalString(_T("IDS_TESTING")).c_str());
-			AddPrompt(strPrompt,FALSE,LIST_WARN);
-			m_TestCaseList[i].nTestStatus = 1;
-			ret = DoTestItem(m_TestCaseList[i].TestName,strOutput);
-			GetDlgItem(IDC_BUTTON_PASS)->EnableWindow(TRUE);
-			GetDlgItem(IDC_BUTTON_FAIL)->EnableWindow(TRUE);
-			if (ret<0)
-			{
-				//m_TestCaseList[i].nTestStatus = -1;
-				strPrompt.Format(GetLocalString(_T("FAILED")).c_str(),GetLocalString(m_TestCaseList[i].TestName).c_str(),ret);
-				AddPrompt(strPrompt,TRUE);
-			}
-			else if (ret == 2)
-			{
-				//strPrompt.Format(GetLocalString(_T("IDS_KEY_DOWN")).c_str(),str2wstr(strOutput).c_str());
-				strPrompt.Format(GetLocalString(_T("IDS_KEY_DOWN")).c_str());
-				AddPrompt(strPrompt);
-			}
-			break;
-		}
-	}
+	//for (i=0;i<m_TestCaseList.size();i++)
+	//{
+	//	if (!m_bRun)
+	//	{
+	//		goto TestExit;
+	//	}
+	//	if (m_TestCaseList[i].nTestStatus == 0)
+	//	{
+	//		bMaunlTest = true;
+	//		strPrompt.Format(_T("%s:%s"),GetLocalString(m_TestCaseList[i].TestName).c_str(),GetLocalString(_T("IDS_TESTING")).c_str());
+	//		AddPrompt(strPrompt,FALSE,LIST_WARN);
+	//		m_TestCaseList[i].nTestStatus = 1;
+	//		PostMessage(WM_UPDATE_TESTINFO_MSG,0,0);
+	//		ret = DoTestItem(m_TestCaseList[i].TestName,strOutput);
+	//		GetDlgItem(IDC_BUTTON_PASS)->EnableWindow(TRUE);
+	//		GetDlgItem(IDC_BUTTON_FAIL)->EnableWindow(TRUE);
+	//		if (ret<0)
+	//		{
+	//			//m_TestCaseList[i].nTestStatus = -1;
+	//			strPrompt.Format(GetLocalString(_T("FAILED")).c_str(),GetLocalString(m_TestCaseList[i].TestName).c_str(),ret);
+	//			AddPrompt(strPrompt,TRUE);
+	//		}
+	//		else if (ret == 2)
+	//		{
+	//			//strPrompt.Format(GetLocalString(_T("IDS_KEY_DOWN")).c_str(),str2wstr(strOutput).c_str());
+	//			strPrompt.Format(GetLocalString(_T("IDS_KEY_DOWN")).c_str());
+	//			AddPrompt(strPrompt);
+	//		}
+	//		break;
+	//	}
+	//}
 
 TestExit:
-	if (!bMaunlTest&&m_bRun)
+	if (m_bRun&&i>=m_TestCaseList.size())
 	{
 		SaveTestResult();
 		strPrompt.Format(GetLocalString(_T("IDS_INFO_TEST_OVER")).c_str());
 		AddPrompt(strPrompt);
-		for (i=0;i<m_TestCaseList.size();i++)
-		{
-			if (m_TestCaseList[i].nTestStatus==-1)
-			{
-				break;
-			}
-		}
-		if (i>=m_TestCaseList.size())
-		{
-			//写号
-			WritePara();
-		}
+		//for (i=0;i<m_TestCaseList.size();i++)
+		//{
+		//	if (m_TestCaseList[i].nTestStatus==-1)
+		//	{
+		//		break;
+		//	}
+		//}
+		//if (i>=m_TestCaseList.size())
+		//{
+		//	//写号
+		//	WritePara();
+		//}
 		GetDlgItem(IDC_BUTTON_PASS)->EnableWindow(FALSE);
 		GetDlgItem(IDC_BUTTON_FAIL)->EnableWindow(FALSE);
 		GetDlgItem(IDC_BUTTON_NEXT)->EnableWindow(TRUE);
@@ -1019,9 +1105,44 @@ void CIPSearchDlg::initTestCase()
 		TestCase.nTestStatus = 0;
 		m_TestCaseList.push_back(TestCase);
 	}
+	if (m_Configs.bBtTest)
+	{
+		TestCase.TestName = m_Configs.strBtTest;
+		TestCase.bAuto = true;
+		TestCase.nTestStatus = 0;
+		m_TestCaseList.push_back(TestCase);
+	}
+	if (m_Configs.bDdrTest)
+	{
+		TestCase.TestName = m_Configs.strDdrTest;
+		TestCase.bAuto = true;
+		TestCase.nTestStatus = 0;
+		m_TestCaseList.push_back(TestCase);
+	}
+	if (m_Configs.bEmmcTest)
+	{
+		TestCase.TestName = m_Configs.strEmmcTest;
+		TestCase.bAuto = true;
+		TestCase.nTestStatus = 0;
+		m_TestCaseList.push_back(TestCase);
+	}
+	if (m_Configs.bRtcTest)
+	{
+		TestCase.TestName = m_Configs.strRtcTest;
+		TestCase.bAuto = true;
+		TestCase.nTestStatus = 0;
+		m_TestCaseList.push_back(TestCase);
+	}
 	if (m_Configs.bKeyTest)
 	{
 		TestCase.TestName = m_Configs.strKeyName;
+		TestCase.bAuto = false;
+		TestCase.nTestStatus = 0;
+		m_TestCaseList.push_back(TestCase);
+	}
+	if (m_Configs.bRotaryTest)
+	{
+		TestCase.TestName = m_Configs.strRotaryTest;
 		TestCase.bAuto = false;
 		TestCase.nTestStatus = 0;
 		m_TestCaseList.push_back(TestCase);
@@ -1067,6 +1188,24 @@ void CIPSearchDlg::initTestCase()
 		TestCase.bAuto = false;
 		TestCase.nTestStatus = 0;
 		m_TestCaseList.push_back(TestCase);
+	}
+}
+void CIPSearchDlg::UpdateTestitemList()
+{
+	initTestCase();
+	m_listTestItem.DeleteAllItems();
+	for (int i=0;i<m_TestCaseList.size();i++)
+	{
+		m_listTestItem.InsertItem(i,_T(""));
+		m_listTestItem.SetItemText(i,0,GetLocalString(m_TestCaseList[i].TestName).c_str());
+		if (m_TestCaseList[i].bAuto)
+		{
+			m_listTestItem.SetItemText(i,1,GetLocalString(_T("IDS_AUTOTEST")).c_str());
+		}
+		else
+		{
+			m_listTestItem.SetItemText(i,1,GetLocalString(_T("IDS_MANUL")).c_str());
+		}
 	}
 }
 BOOL CIPSearchDlg::RecvProc()
@@ -1128,21 +1267,6 @@ BOOL CIPSearchDlg::RecvProc()
 	return TRUE;
 }
 
-void CIPSearchDlg::OnBnClickedBtnPlayer()
-{
-	// TODO: Add your control notification handler code here
-	CString strUrl;
-	if (m_strIp.IsEmpty())
-	{
-		strUrl = _T("");
-	}
-	else
-	{
-		strUrl.Format(_T("rtsp://%s/webcam"),m_strIp);
-	}
-	CVideoDlg	m_VideoDlg(strUrl);
-	m_VideoDlg.DoModal();
-}
 
 void CIPSearchDlg::OnBnClickedButtonNext()
 {
@@ -1313,7 +1437,7 @@ void CIPSearchDlg::OnBnClickedButtonPass()
 			break;
 		}
 	}
-
+	PostMessage(WM_UPDATE_TESTINFO_MSG,0,0);
 	if (m_TestCaseList[nCount-1].nTestStatus!=0&&m_TestCaseList[nCount-1].nTestStatus!=1)
 	{
 		//保存测试结果
@@ -1387,7 +1511,7 @@ void CIPSearchDlg::OnBnClickedButtonFail()
 			break;
 		}
 	}
-
+	PostMessage(WM_UPDATE_TESTINFO_MSG,0,0);
 	if (m_TestCaseList[nCount-1].nTestStatus==-1)
 	{
 		//保存测试结果
@@ -1497,7 +1621,6 @@ void CIPSearchDlg::ExitTest()
 			}
 		}
 	}
-	m_DevTest.StopCamera(m_TestSocket,wstr2str(m_Configs.strCameraName));
 	ret = m_DevTest.ExitTest(m_TestSocket);
 	//if (ret<0)
 	//{
@@ -1589,7 +1712,29 @@ int CIPSearchDlg::DoTestItem(std::wstring strTestName,std::string &strInfo)
 	}
 	else if (strTestName.compare(m_Configs.strHdmiName)==0)
 	{
-		ret = m_DevTest.LedTest(m_TestSocket,wstr2str(strTestName));
+		ret = m_DevTest.HdmiTest(m_TestSocket,wstr2str(strTestName));
+	}
+	else if (strTestName.compare(m_Configs.strBtTest)==0)
+	{
+		ret = m_DevTest.BtTest(m_TestSocket,wstr2str(strTestName));
+	}
+	else if (strTestName.compare(m_Configs.strEmmcTest)==0)
+	{
+		ret = m_DevTest.EmmcTest(m_TestSocket,wstr2str(strTestName));
+	}
+	else if (strTestName.compare(m_Configs.strDdrTest)==0)
+	{
+		ret = m_DevTest.DdrTest(m_TestSocket,wstr2str(strTestName));
+	}
+	else if (strTestName.compare(m_Configs.strRtcTest)==0)
+	{
+		ret = m_DevTest.RtcTest(m_TestSocket,wstr2str(strTestName));
+	}
+	else if (strTestName.compare(m_Configs.strRotaryTest)==0)
+	{
+		GetDlgItem(IDC_BUTTON_PASS)->EnableWindow(TRUE);
+		GetDlgItem(IDC_BUTTON_FAIL)->EnableWindow(TRUE);
+		ret=m_DevTest.KeyTest(m_TestSocket,wstr2str(strTestName),strInfo);
 	}
 
 	return ret;
@@ -1634,4 +1779,31 @@ void CIPSearchDlg::OnBnClickedButtonExit()
 	}
 	strPrompt.Format(GetLocalString(_T("IDS_INFO_EXIT_TEST_SUCCESS")).c_str());
 	AddPrompt(strPrompt);
+}
+LRESULT CIPSearchDlg::OnHandleUpdateTestinfoMsg(WPARAM wParam,LPARAM lParam)
+{
+	for (int i = 0; i<m_TestCaseList.size(); i++)
+	{
+		if (m_TestCaseList[i].nTestStatus==0)
+		{
+			m_listTestItem.SetItemText(i,2,_T(""));
+			m_listTestItem.SetRowColor(i,RGB(255,255,255));
+		}
+		else if (m_TestCaseList[i].nTestStatus==1)
+		{
+			m_listTestItem.SetItemText(i,2,GetLocalString(_T("IDS_TESTING")).c_str());
+			m_listTestItem.SetRowColor(i,RGB(255,255,0));
+		}
+		else if (m_TestCaseList[i].nTestStatus==2)
+		{
+			m_listTestItem.SetItemText(i,2,GetLocalString(_T("IDS_PASS")).c_str());
+			m_listTestItem.SetRowColor(i,RGB(0,255,0));
+		}
+		else if (m_TestCaseList[i].nTestStatus==-1)
+		{
+			m_listTestItem.SetItemText(i,2,GetLocalString(_T("IDS_FAIL")).c_str());
+			m_listTestItem.SetRowColor(i,RGB(255,0,0));
+		}
+	}
+	return 0;
 }

@@ -9,7 +9,10 @@
 #endif
 
 #include "resource.h"		// Ö÷·ûºÅ
-#define WM_UPDATE_MSG		(WM_USER+111)
+#define WM_UPDATE_MSG			(WM_USER+111)
+#define WM_UPDATE_TESTINFO_MSG	(WM_USER+125)
+
+
 #define UPDATE_CONFIG 0
 #define UPDATE_WINDOW 1
 #define UPDATE_TEST_EXIT 2
