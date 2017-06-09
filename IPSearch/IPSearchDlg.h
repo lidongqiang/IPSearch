@@ -97,7 +97,8 @@ public:
 	void ParseDevInfo(char *msg,CString &strUid,CString &strAddr,CString &strDevname);
 	bool OnStartTest();
 	BOOL TestProc();
-	int ScanDeviceProc(_In_  LPVOID lpParameter);
+	BOOL NextTestProc(LPVOID lpParameter);
+	int ScanDeviceProc(LPVOID lpParameter);
 	BOOL RecvProc();
 	//void RecvThread();
 	int	 connect_dev();
@@ -130,3 +131,7 @@ typedef struct{
 	CIPSearchDlg *pDlg;
 	char *ip;
 }ThreadInfo;
+typedef struct{
+	CIPSearchDlg *pDlg;
+	int nResult;
+}TestInfo;
