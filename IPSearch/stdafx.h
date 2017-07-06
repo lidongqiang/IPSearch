@@ -46,7 +46,7 @@
 #pragma comment(lib,"cmMfcLib_vs2008.lib")
 #endif
 
-
+#pragma comment(lib, "iphlpapi.lib")
 
 
 

@@ -97,7 +97,7 @@ public:
 	void ParseDevInfo(char *msg,CString &strUid,CString &strAddr,CString &strDevname);
 	bool OnStartTest();
 	BOOL TestProc();
-	BOOL NextTestProc(LPVOID lpParameter);
+	BOOL NextTestProc(int nTestResult);
 	int ScanDeviceProc(LPVOID lpParameter);
 	BOOL RecvProc();
 	//void RecvThread();

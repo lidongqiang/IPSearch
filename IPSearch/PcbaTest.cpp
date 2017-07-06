@@ -177,7 +177,7 @@ int CPcbaTest::QueryTestItem(SOCKET TestSocket,std::string TestName,std::string 
 	ret = socket_write(TestSocket,strMsg);
 	if (ret < 0)
 	{
-		LOGER((CLogger::DEBUG_DUT,"%s:socket:send data failed\r\n",TestName.c_str()));
+		LOGER((CLogger::DEBUG_DUT,"%s:socket:send data failed,errcode=%d\r\n",TestName.c_str(),ret));
 		return -101;
 	}
 
@@ -185,7 +185,7 @@ int CPcbaTest::QueryTestItem(SOCKET TestSocket,std::string TestName,std::string 
 	ret = socket_read(TestSocket,strMsg);
 	if (ret <= 0)
 	{
-		LOGER((CLogger::DEBUG_DUT,"%s:recv data failed\r\n",TestName.c_str()));
+		LOGER((CLogger::DEBUG_DUT,"%s:recv data failed,errcode=%d\r\n",TestName.c_str(),ret));
 		return -102;
 	}
 	LOGER((CLogger::DEBUG_DUT,"recv_msg:%s",strMsg.c_str()));
@@ -264,14 +264,14 @@ int CPcbaTest::StopTestItem(SOCKET TestSocket,std::string TestName)
 	ret = socket_write(TestSocket,strMsg);
 	if (ret < 0)
 	{
-		LOGER((CLogger::DEBUG_DUT,"%s:socket:send data failed\r\n",TestName));
+		LOGER((CLogger::DEBUG_DUT,"%s:socket:send data failed,errcode=%d\r\n",TestName.c_str(),ret));
 		return -101;
 	}
 	//2.读取设备端返回的结果，确定成功与否，成功返回{"TYPE":"RES", "TEST_ITEM":"test_item", "RES":"STOP", "STATUS":"ACK"}
 	ret = socket_read(TestSocket,strMsg);
 	if (ret <= 0)
 	{
-		LOGER((CLogger::DEBUG_DUT,"recv data failed\r\n"));
+		LOGER((CLogger::DEBUG_DUT,"recv data failed,errcode=%d\r\n",ret));
 		return -102;
 	}
 	LOGER((CLogger::DEBUG_DUT,"recv_msg:%s\n",strMsg.c_str()));

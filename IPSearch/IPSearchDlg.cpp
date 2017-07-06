@@ -67,11 +67,20 @@ UINT TestDeviceThread(LPVOID lpParam)
 	pMainDlg->TestProc();
 	return 0;
 }
-UINT NextTestThread(LPVOID lpParam)
+UINT NextTestPassThread(LPVOID lpParam)
 {
-	TestInfo*   pParam   =   (TestInfo   *)lpParam; 
-	CIPSearchDlg* pMainDlg = (CIPSearchDlg*)pParam->pDlg;
-	pMainDlg->NextTestProc(&pParam->nResult);
+	//TestInfo*   pParam   =   (TestInfo   *)lpParam; 
+	//CIPSearchDlg* pMainDlg = (CIPSearchDlg*)pParam->pDlg;
+	CIPSearchDlg* pMainDlg = (CIPSearchDlg*)lpParam;
+	pMainDlg->NextTestProc(1);
+	return 0;
+}
+UINT NextTestFailThread(LPVOID lpParam)
+{
+	//TestInfo*   pParam   =   (TestInfo   *)lpParam; 
+	//CIPSearchDlg* pMainDlg = (CIPSearchDlg*)pParam->pDlg;
+	CIPSearchDlg* pMainDlg = (CIPSearchDlg*)lpParam;
+	pMainDlg->NextTestProc(0);
 	return 0;
 }
 UINT RecvDeviceThread(LPVOID lpParam)
@@ -454,14 +463,18 @@ void CIPSearchDlg::OnBnClickedBtnSerch()
 {
 	// TODO: Add your control notification handler code here
 
-	std::string strUid,strAddr,strDevname,strMac;
+	std::string strUid,strAddr,strDevname,strMac,strIp,strTmp;
 	STRUCT_DEV_INFO DevInfo;
 	m_DevList.clear();
 	m_listDevice.DeleteAllItems();
 	CWinThread *pA = NULL;
-	HANDLE hThread[3];
+	HANDLE hThread[10];
 	int i = 0;
 	ThreadInfo param;
+	//PIP_ADAPTER_INFO结构体指针存储本机网卡信息
+	PIP_ADAPTER_INFO pIpAdapterInfo = new IP_ADAPTER_INFO();
+	//得到结构体大小,用于GetAdaptersInfo参数
+	unsigned long stSize = sizeof(IP_ADAPTER_INFO);
 
 	this->GetDlgItem(ID_BTN_SERCH)->EnableWindow(FALSE);
 
@@ -478,20 +491,42 @@ void CIPSearchDlg::OnBnClickedBtnSerch()
 		WSACleanup();  
 		return ;  
 	}
-	char hostname[1024] = {0};
-	gethostname(hostname, sizeof(hostname));    //获得本地主机名
-	PHOSTENT hostinfo = gethostbyname(hostname);//信息结构体
-	while(*(hostinfo->h_addr_list) != NULL)        //输出IP地址
+
+	//调用GetAdaptersInfo函数,填充pIpAdapterInfo指针变量;其中stSize参数既是一个输入量也是一个输出量
+	int nRel = GetAdaptersInfo(pIpAdapterInfo,&stSize);
+	if (ERROR_BUFFER_OVERFLOW==nRel)
 	{
-		param.ip = inet_ntoa(*(struct in_addr *) *hostinfo->h_addr_list);
-		param.pDlg = this;
-		pA = AfxBeginThread(ScanDeviceThread,&param);
-		hThread[i++] = pA->m_hThread;
-		hostinfo->h_addr_list++;
-		::WaitForSingleObject(pA->m_hThread,INFINITE);
+		//如果函数返回的是ERROR_BUFFER_OVERFLOW
+		//则说明GetAdaptersInfo参数传递的内存空间不够,同时其传出stSize,表示需要的空间大小
+		//这也是说明为什么stSize既是一个输入量也是一个输出量
+		//释放原来的内存空间
+		delete pIpAdapterInfo;
+		//重新申请内存空间用来存储所有网卡信息
+		pIpAdapterInfo = (PIP_ADAPTER_INFO)new BYTE[stSize];
+		//再次调用GetAdaptersInfo函数,填充pIpAdapterInfo指针变量
+		nRel=GetAdaptersInfo(pIpAdapterInfo,&stSize);    
 	}
-	//Wait until all threads have terminated.
-	//::WaitForMultipleObjects(i-1,hThread,TRUE,INFINITE);
+
+	if (ERROR_SUCCESS==nRel)
+	{
+		//输出网卡信息
+		while (pIpAdapterInfo)
+		{
+			strIp = pIpAdapterInfo->Description;
+			strTmp = pIpAdapterInfo->IpAddressList.IpAddress.String;
+			if (strIp.find("NDIS") < strIp.length()&&strTmp.find("0.0.0.0") > strTmp.length())
+			{
+				//AfxMessageBox(str2wstr(pIpAdapterInfo->IpAddressList.IpAddress.String).c_str());
+				param.ip = pIpAdapterInfo->IpAddressList.IpAddress.String;
+				param.pDlg = this;
+				pA = AfxBeginThread(ScanDeviceThread,&param);
+				hThread[i++] = pA->m_hThread;
+				::WaitForSingleObject(pA->m_hThread,INFINITE);
+			}
+			pIpAdapterInfo = pIpAdapterInfo->Next;
+		}
+
+	}
 	int nIndex;
 	for (nIndex=0;nIndex<m_DevList.size();nIndex++)
 	{
@@ -745,18 +780,16 @@ int CIPSearchDlg::ScanDeviceProc(LPVOID lpParameter)
 	if (SOCKET_ERROR == sockClient)
 	{
 		//printf ("socket create failed. ip=[%s] errno=[%d] ", szIp, WSAGetLastError());
-		AfxMessageBox(_T("socket create failed. ip=[%s] errno=[%d] "));
-		return	-2;
+		return	-3;
 	}
 	BOOL bBroadcast = TRUE;                             
 	if (0 != setsockopt ( sockClient,SOL_SOCKET,SO_BROADCAST, (CHAR *)&bBroadcast, sizeof(BOOL)))
 	{
-		AfxMessageBox (_T("setsockopt failed. ip=[%s] errno=[%d]"));
-		return	-3;
+		return	-4;
 	}
 	//int iMode = 1; //0：阻塞
 	//ioctlsocket(sock,FIONBIO, (u_long FAR*) &iMode);//非阻塞设置
-	int nNetTimeout=3000;//1秒，
+	int nNetTimeout=300;//1秒，
 	//设置发送超时
 	setsockopt(sockClient,SOL_SOCKET,SO_SNDTIMEO,(char *)&nNetTimeout,sizeof(int));
 	//设置接收超时
@@ -767,7 +800,7 @@ int CIPSearchDlg::ScanDeviceProc(LPVOID lpParameter)
 	addrClient.sin_port	= 0;	/// 0 表示由系统自动分配端口号
 	if (0 != bind (sockClient, (sockaddr*)&addrClient, sizeof(addrClient)))
 	{
-		AfxMessageBox (_T("bind failed.ip=[%s] errno=[%d]\n"));
+		return	-5;
 	}
 	SOCKADDR_IN addrServer; 
 	memset(&addrServer, 0, sizeof(addrServer));  
@@ -775,6 +808,7 @@ int CIPSearchDlg::ScanDeviceProc(LPVOID lpParameter)
 	addrServer.sin_addr.s_addr = htonl(INADDR_BROADCAST);
 	addrServer.sin_port = htons (18888);
 	int len = sizeof(addrServer);
+	Sleep(1000);
 
 	char szBuf[MAX_BUFFER] = {0};
 	char buf[] = {"CMD_DISCOVER"};
@@ -805,8 +839,7 @@ int CIPSearchDlg::ScanDeviceProc(LPVOID lpParameter)
 			//m_listDevice.SetItemText(nIndex,1,str2wstr(strAddr).c_str());
 			//m_listDevice.SetItemText(nIndex,2,str2wstr(strDevname).c_str());
 			nIndex++;
-		}
-		Sleep(100);  
+		}  
 	}  
 	closesocket(sockClient); 
 	WSACleanup();
@@ -954,6 +987,7 @@ BOOL CIPSearchDlg::TestProc()
 					m_TestCaseList[i].nTestStatus = -1;
 					PostMessage(WM_UPDATE_TESTINFO_MSG,0,0);
 				}
+				Sleep(300);
 			}
 		}
 		if (!m_bRun)
@@ -1011,7 +1045,7 @@ int CIPSearchDlg::connect_dev()
 	//setsockopt(m_TestSocket,SOL_SOCKET,SO_SNDTIMEO,(char *)&nNetTimeout,sizeof(int));
 	//设置接收超时
 	//setsockopt(m_TestSocket,SOL_SOCKET,SO_RCVTIMEO,(char *)&nNetTimeout,sizeof(int));
-	Timeout(m_TestSocket,5000);
+	Timeout(m_TestSocket,3000);
 
 	SOCKADDR_IN addrSrv; 
 	addrSrv.sin_addr.S_un.S_addr=inet_addr(wstr2str((LPCTSTR)m_strIp).c_str()); 
@@ -1358,9 +1392,9 @@ void CIPSearchDlg::OnBnClickedButtonPass()
 	// TODO: Add your control notification handler code here
 	TestInfo param;
 	CWinThread *pA = NULL;
-	param.nResult = 1;
-	param.pDlg = this;
-	pA = AfxBeginThread(NextTestThread,&param);
+	//param.nResult = 1;
+	//param.pDlg = this;
+	pA = AfxBeginThread(NextTestPassThread,this);
 	pA=NULL;
 }
 
@@ -1369,9 +1403,9 @@ void CIPSearchDlg::OnBnClickedButtonFail()
 	// TODO: Add your control notification handler code here
 	TestInfo param;
 	CWinThread *pA = NULL;
-	param.nResult = 0;
-	param.pDlg = this;
-	pA = AfxBeginThread(NextTestThread,&param);
+	//param.nResult = 0;
+	//param.pDlg = this;
+	pA = AfxBeginThread(NextTestFailThread,this);
 	pA=NULL;
 }
 
@@ -1528,9 +1562,10 @@ int CIPSearchDlg::DoTestItem(std::wstring strTestName,std::string &strInfo)
 	//std::string strOutput;
 	if (strTestName.compare(m_Configs.strKeyName)==0)
 	{
-		GetDlgItem(IDC_BUTTON_PASS)->EnableWindow(TRUE);
+		GetDlgItem(IDC_BUTTON_PASS)->EnableWindow(FALSE);
 		GetDlgItem(IDC_BUTTON_FAIL)->EnableWindow(TRUE);
 		ret=m_DevTest.KeyTest(m_TestSocket,wstr2str(strTestName),strInfo);
+		GetDlgItem(IDC_BUTTON_PASS)->EnableWindow(TRUE);
 	}
 	else if (strTestName.compare(m_Configs.strSdcardName)==0)
 	{
@@ -1582,9 +1617,10 @@ int CIPSearchDlg::DoTestItem(std::wstring strTestName,std::string &strInfo)
 	}
 	else if (strTestName.compare(m_Configs.strRotaryTest)==0)
 	{
-		GetDlgItem(IDC_BUTTON_PASS)->EnableWindow(TRUE);
+		GetDlgItem(IDC_BUTTON_PASS)->EnableWindow(FALSE);
 		GetDlgItem(IDC_BUTTON_FAIL)->EnableWindow(TRUE);
 		ret=m_DevTest.KeyTest(m_TestSocket,wstr2str(strTestName),strInfo);
+		GetDlgItem(IDC_BUTTON_PASS)->EnableWindow(TRUE);
 	}
 
 	return ret;
@@ -1658,7 +1694,7 @@ LRESULT CIPSearchDlg::OnHandleUpdateTestinfoMsg(WPARAM wParam,LPARAM lParam)
 	return 0;
 }
 
-BOOL CIPSearchDlg::NextTestProc(LPVOID lpParameter)
+BOOL CIPSearchDlg::NextTestProc(int nTestResult)
 {
 	int ret;
 	int i;
@@ -1666,8 +1702,6 @@ BOOL CIPSearchDlg::NextTestProc(LPVOID lpParameter)
 	CString strPrompt;
 	bool bTest=false;
 	std::string strOutput;
-	int *nResult = (int*)lpParameter;
-	int nTest = *nResult;
 
 	nCount = m_TestCaseList.size();
 	//1.获取当前测试项，保存测试结果，设置测试状态为已测试
@@ -1683,7 +1717,7 @@ BOOL CIPSearchDlg::NextTestProc(LPVOID lpParameter)
 				m_TestCaseList[i].nTestStatus = -1;
 				m_bTestPass = false;
 			}
-			if (nTest)
+			if (nTestResult)
 			{
 				strPrompt.Format(_T("%s:%s"),GetLocalString(m_TestCaseList[i].TestName).c_str(),GetLocalString(_T("IDS_PASS")).c_str());
 				AddPrompt(strPrompt,FALSE,LIST_PASS);

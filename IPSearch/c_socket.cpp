@@ -103,8 +103,14 @@
 int socket_write(SOCKET socket_fd, std::string strMsg)
 {
     int ret = 0;
+	int nErr = 0;
     int send_len = 0;
     char len[4];
+	int n = 0;
+	char data[200] = "";
+	memset(data,0,sizeof(data));
+	//strcpy_s(data,strMsg.length()+1,strMsg.c_str());
+	strcpy(data,strMsg.c_str());
 
 	//由于消息包大小可变，先获取消息包长度，发送给接收端，四个字节存消息包大小
 	//send_len = strMsg.length();
@@ -114,9 +120,19 @@ int socket_write(SOCKET socket_fd, std::string strMsg)
 	//{
 	//	goto exit;
 	//}
-	ret = send(socket_fd,strMsg.c_str(),200,0);
+	for(n=0;n<3;n++)
+	{
+		ret = send(socket_fd,data,200,0);
+		nErr = GetLastError();
+		if (ret >= 0 && nErr < 10000)
+		{
+			break;
+		}
+	}
+	//ret = send(socket_fd,strMsg.c_str(),200,0);
 	if (ret<0)
 	{
+		ret = -nErr;
 		goto exit;
 	}
 	
@@ -133,17 +149,23 @@ int socket_read(SOCKET socket_fd, std::string &strMsg)
     int recv_len = 0;
 	char buf_len[4];
 	char data[1024];
+	int n;
+	int nErr = 0;
+
+	for(n=0;n<3;n++)
+	{
+		ret = recv(socket_fd,data,200,0);
+		nErr = GetLastError();
+		if (ret >= 0 && nErr < 10000)
+		{
+			break;
+		}
+	}
 	
-	//ret = recv(socket_fd,buf_len,4,0);
-	//if (ret<0)
-	//{
-	//	goto exit;
-	//}	
-	//recv_len += ret;
-	
-	ret = recv(socket_fd,data,200,0);
+	//ret = recv(socket_fd,data,200,0);
 	if (ret<0)
 	{
+		ret = -nErr;
 		goto exit;
 	}
 	//data[atoi(buf_len)] = '\0';
