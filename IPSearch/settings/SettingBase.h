@@ -1,7 +1,7 @@
 #ifndef _SETTINGBASE_H_
 #define _SETTINGBASE_H_
 #define USER_LOGIN
-#define APP_VERSION " V1.0.3"
+#define APP_VERSION " V1.0.4"
 #include "inifile.h"
 //#include "../config.h"
 
@@ -189,11 +189,15 @@ public:
 	bool bBtTest;
 	bool bEmmcTest;
 	bool bDdrTest;
+	bool bTouchTest;
+	bool bMicTest;
 	bool bRtcTest;
 	bool bRotaryTest;
 	std::wstring strBtTest;
 	std::wstring strEmmcTest;
 	std::wstring strDdrTest;
+	std::wstring strTouchTest;
+	std::wstring strMicTest;
 	std::wstring strRtcTest;
 	std::wstring strRotaryTest;
 };

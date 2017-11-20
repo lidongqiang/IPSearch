@@ -300,6 +300,8 @@ bool CIniSettingBase::LoadToolSetting(std::wstring strConfig)
 	bBtTest				= 1 == _wtoi(GetStr(TEXT("BtTest")).c_str());
 	bEmmcTest			= 1 == _wtoi(GetStr(TEXT("EmmcTest")).c_str());
 	bDdrTest			= 1 == _wtoi(GetStr(TEXT("DdrTest")).c_str());
+	bTouchTest			= 1 == _wtoi(GetStr(TEXT("TouchTest")).c_str());
+	bMicTest			= 1 == _wtoi(GetStr(TEXT("MicTest")).c_str());
 	bRtcTest			= 1 == _wtoi(GetStr(TEXT("RtcTest")).c_str());
 	bRotaryTest			= 1 == _wtoi(GetStr(TEXT("RotaryTest")).c_str());
 	strSdcardName		= GetStr(TEXT("SdcardName"));
@@ -316,6 +318,8 @@ bool CIniSettingBase::LoadToolSetting(std::wstring strConfig)
 	strBtTest			= GetStr(TEXT("BtName"));
 	strEmmcTest			= GetStr(TEXT("EmmcName"));
 	strDdrTest			= GetStr(TEXT("DdrName"));
+	strTouchTest		= GetStr(TEXT("TouchName"));
+	strMicTest			= GetStr(TEXT("MicName"));
 	strRtcTest			= GetStr(TEXT("RtcName"));
 	strRotaryTest		= GetStr(TEXT("RotaryName"));
 
@@ -427,6 +431,8 @@ bool CIniSettingBase::SaveToolSetting(std::wstring strConfig)
 		SetStr( TEXT("BtTest")    		, bBtTest ?checke:unckeck);
 		SetStr( TEXT("LedTest")    		, bLedTest ?checke:unckeck);
 		SetStr( TEXT("DdrTest")    		, bDdrTest ?checke:unckeck);
+		SetStr( TEXT("TouchTest")    	, bTouchTest ?checke:unckeck);
+		SetStr( TEXT("MicTest")    		, bMicTest ?checke:unckeck);
 		SetStr( TEXT("EmmcTest")    		, bEmmcTest ?checke:unckeck);
 		SetStr( TEXT("RtcTest")    		, bRtcTest ?checke:unckeck);
 		SetStr( TEXT("RotaryTest")    		, bRotaryTest ?checke:unckeck);

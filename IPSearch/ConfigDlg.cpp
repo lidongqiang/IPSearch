@@ -52,6 +52,8 @@ void CConfigDlg::OnBnClickedBtnOk()
 	m_Configs.bBtTest		 = (((CButton*)GetDlgItem(IDC_CHECK_BT))->GetCheck() == BST_CHECKED);
 	m_Configs.bEmmcTest		 = (((CButton*)GetDlgItem(IDC_CHECK_EMMC))->GetCheck() == BST_CHECKED);
 	m_Configs.bDdrTest		 = (((CButton*)GetDlgItem(IDC_CHECK_DDR))->GetCheck() == BST_CHECKED);
+	m_Configs.bTouchTest	 = (((CButton*)GetDlgItem(IDC_CHECK_TOUCH))->GetCheck() == BST_CHECKED);
+	m_Configs.bMicTest		 = (((CButton*)GetDlgItem(IDC_CHECK_MIC))->GetCheck() == BST_CHECKED);
 	m_Configs.bRtcTest		 = (((CButton*)GetDlgItem(IDC_CHECK_RTC))->GetCheck() == BST_CHECKED);
 	m_Configs.bRotaryTest		 = (((CButton*)GetDlgItem(IDC_CHECK_ROTARY))->GetCheck() == BST_CHECKED);
 	CConfigDlg::OnOK();
@@ -77,6 +79,8 @@ BOOL CConfigDlg::OnInitDialog()
 	((CButton*)GetDlgItem(IDC_CHECK_BT    ))->SetCheck(m_Configs.bBtTest                ?BST_CHECKED:BST_UNCHECKED);
 	((CButton*)GetDlgItem(IDC_CHECK_EMMC    ))->SetCheck(m_Configs.bEmmcTest                ?BST_CHECKED:BST_UNCHECKED);
 	((CButton*)GetDlgItem(IDC_CHECK_DDR    ))->SetCheck(m_Configs.bDdrTest                ?BST_CHECKED:BST_UNCHECKED);
+	((CButton*)GetDlgItem(IDC_CHECK_TOUCH    ))->SetCheck(m_Configs.bTouchTest                ?BST_CHECKED:BST_UNCHECKED);
+	((CButton*)GetDlgItem(IDC_CHECK_MIC    ))->SetCheck(m_Configs.bMicTest                ?BST_CHECKED:BST_UNCHECKED);
 	((CButton*)GetDlgItem(IDC_CHECK_RTC    ))->SetCheck(m_Configs.bRtcTest                ?BST_CHECKED:BST_UNCHECKED);
 	((CButton*)GetDlgItem(IDC_CHECK_ROTARY    ))->SetCheck(m_Configs.bRotaryTest                ?BST_CHECKED:BST_UNCHECKED);
 

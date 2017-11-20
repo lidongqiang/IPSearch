@@ -56,8 +56,11 @@
 #define IDC_CHECK_HDMI                  1018
 #define IDC_CHECK10                     1019
 #define IDC_CHECK_LANMAC                1019
+#define IDC_                            1019
+#define IDC_CHECK_TOUCH                 1019
 #define IDC_CHECK11                     1020
 #define IDC_CHECK_UID                   1020
+#define IDC_CHECK_MIC                   1020
 #define ID_BTN_OK                       1021
 #define ID_BTN_CANCEL                   1022
 #define IDC_CHECK_BT                    1023

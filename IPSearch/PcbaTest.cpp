@@ -49,7 +49,7 @@ int CPcbaTest::EnterTestMode(SOCKET TestSocket)
 	ret = socket_write(TestSocket,strMsg);
 	if (ret < 0)
 	{
-		LOGER((CLogger::DEBUG_DUT,"socket:send data failed\r\n"));
+		LOGER((CLogger::DEBUG_DUT,"socket:send data failed,err=%d\r\n",ret));
 		return -101;
 	}
 
@@ -57,7 +57,7 @@ int CPcbaTest::EnterTestMode(SOCKET TestSocket)
 	ret = socket_read(TestSocket,strMsg);
 	if (ret <= 0)
 	{
-		LOGER((CLogger::DEBUG_DUT,"socket:recv data failed\r\n"));
+		LOGER((CLogger::DEBUG_DUT,"socket:recv data failed,err\r\n",ret));
 		return -102;
 	}
 	LOGER((CLogger::DEBUG_DUT,"recv_msg%s\r\n",strMsg.c_str()));
@@ -77,7 +77,7 @@ int CPcbaTest::EnterTestMode(SOCKET TestSocket)
 	return 0;
 }
 
-int CPcbaTest::ExitTest(SOCKET TestSocket)
+int CPcbaTest::ExitTest(SOCKET TestSocket,std::string Msg)
 {
 	std::string strMsg,strSta,strRes,strErrCode;
 	int ret,nErrCode;
@@ -85,12 +85,12 @@ int CPcbaTest::ExitTest(SOCKET TestSocket)
 	LOGER((CLogger::DEBUG_DUT,"ExitTest()"));
 
 	//1.发送命令给设备端退出测试模式{"TYPE":"CMD", "CMD":"EXIT" }
-	m_Json.ItemtoJson("TYPE","CMD","CMD","EXIT",strMsg);
+	m_Json.ItemtoJson("TYPE","CMD","CMD","EXIT","MSG",Msg,strMsg);
 	LOGER((CLogger::DEBUG_DUT,"%s\r\n",strMsg.c_str()));
 	ret = socket_write(TestSocket,strMsg);
 	if (ret < 0)
 	{
-		LOGER((CLogger::DEBUG_DUT,"socket:send data failed\r\n"));
+		LOGER((CLogger::DEBUG_DUT,"socket:send data failed,err=%d\r\n",ret));
 		return -101;
 	}
 
@@ -98,7 +98,7 @@ int CPcbaTest::ExitTest(SOCKET TestSocket)
 	ret = socket_read(TestSocket,strMsg);
 	if (ret < 0)
 	{
-		LOGER((CLogger::DEBUG_DUT,"socket:recv data failed\r\n"));
+		LOGER((CLogger::DEBUG_DUT,"socket:recv data failed,err=%d\r\n",ret));
 		return -102;
 	}
 	LOGER((CLogger::DEBUG_DUT,"recv_msg:%s\n",strMsg.c_str()));
@@ -134,7 +134,7 @@ int CPcbaTest::StartTestItem(SOCKET TestSocket,std::string TestName,std::string 
 	ret = socket_write(TestSocket,strMsg);
 	if (ret < 0)
 	{
-		LOGER((CLogger::DEBUG_DUT,"%s:socket:send data failed\r\n",TestName.c_str()));
+		LOGER((CLogger::DEBUG_DUT,"%s:socket:send data failed.err=%d\r\n",TestName.c_str(),ret));
 		return -102;
 	}
 
@@ -142,7 +142,7 @@ int CPcbaTest::StartTestItem(SOCKET TestSocket,std::string TestName,std::string 
 	ret = socket_read(TestSocket,strMsg);
 	if (ret <= 0)
 	{
-		LOGER((CLogger::DEBUG_DUT,"recv data failed\r\n"));
+		LOGER((CLogger::DEBUG_DUT,"recv data failed,err=%d\r\n",ret));
 		return -103;
 	}
 	LOGER((CLogger::DEBUG_DUT,"recv msg:%s\n",strMsg.c_str()));
@@ -225,7 +225,7 @@ int CPcbaTest::CommitResult(SOCKET TestSocket,std::string TestName,std::string s
 	ret = socket_write(TestSocket,strMsg);
 	if (ret < 0)
 	{
-		LOGER((CLogger::DEBUG_DUT,"socket:send data failed\r\n"));
+		LOGER((CLogger::DEBUG_DUT,"socket:send data failed,err=%d\r\n",ret));
 		return -101;
 	}
 
@@ -233,7 +233,7 @@ int CPcbaTest::CommitResult(SOCKET TestSocket,std::string TestName,std::string s
 	ret = socket_read(TestSocket,strMsg);
 	if (ret <= 0)
 	{
-		LOGER((CLogger::DEBUG_DUT,"recv data failed\r\n"));
+		LOGER((CLogger::DEBUG_DUT,"recv data failed,ret=%d\r\n",ret));
 		return -102;
 	}
 	LOGER((CLogger::DEBUG_DUT,"recv_msg:%s\n",strMsg.c_str()));
@@ -500,6 +500,14 @@ int CPcbaTest::PtzTest(SOCKET TestSocket,std::string TestName)
 	return StartTestItem(TestSocket,TestName);
 }
 int CPcbaTest::WifiTest(SOCKET TestSocket,std::string TestName)
+{
+	return StartTestItem(TestSocket,TestName);
+}
+int CPcbaTest::TouchTest(SOCKET TestSocket,std::string TestName)
+{
+	return StartTestItem(TestSocket,TestName);
+}
+int CPcbaTest::MicTest(SOCKET TestSocket,std::string TestName)
 {
 	return StartTestItem(TestSocket,TestName);
 }

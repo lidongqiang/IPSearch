@@ -464,6 +464,13 @@ void CIPSearchDlg::OnBnClickedBtnSerch()
 	// TODO: Add your control notification handler code here
 
 	std::string strUid,strAddr,strDevname,strMac,strIp,strTmp;
+	CHAR NewIPStr[] = "169.254.2.11";
+	CHAR NewMaskStr[] = "255.255.0.0";
+	ULONG NTEContext = 0;
+	ULONG NTEInstance;
+	DWORD Err;
+	IPAddr NewIP;
+	IPAddr NewMask;
 	STRUCT_DEV_INFO DevInfo;
 	m_DevList.clear();
 	m_listDevice.DeleteAllItems();
@@ -514,11 +521,26 @@ void CIPSearchDlg::OnBnClickedBtnSerch()
 		{
 			strIp = pIpAdapterInfo->Description;
 			strTmp = pIpAdapterInfo->IpAddressList.IpAddress.String;
-			if (strIp.find("NDIS") < strIp.length()&&strTmp.find("0.0.0.0") > strTmp.length())
+			if (strIp.find("NDIS") < strIp.length())
 			{
 				//AfxMessageBox(str2wstr(pIpAdapterInfo->IpAddressList.IpAddress.String).c_str());
-				param.ip = pIpAdapterInfo->IpAddressList.IpAddress.String;
-				param.pDlg = this;
+				if (strTmp.find("0.0.0.0") < strTmp.length())
+				{
+					NewIP = inet_addr(NewIPStr);
+					NewMask = inet_addr(NewMaskStr);
+					if ((Err = AddIPAddress(NewIP, NewMask, pIpAdapterInfo->Index, &NTEContext, &NTEInstance))!=0)
+					{
+						AfxMessageBox(_T("AddIPAddress failed with error %d, %d\n"), NTEContext, Err);
+						return ;
+					}
+					param.ip = NewIPStr;
+					param.pDlg = this;
+				}
+				else
+				{
+					param.ip = pIpAdapterInfo->IpAddressList.IpAddress.String;
+					param.pDlg = this;
+				}
 				pA = AfxBeginThread(ScanDeviceThread,&param);
 				hThread[i++] = pA->m_hThread;
 				::WaitForSingleObject(pA->m_hThread,INFINITE);
@@ -938,6 +960,12 @@ BOOL CIPSearchDlg::TestProc()
 					AddPrompt(strPrompt,FALSE,LIST_WARN);
 					m_listTestItem.SetItemText(i,2,strPrompt);
 				}
+				else if (m_TestCaseList[i].TestName.compare(m_Configs.strTouchTest)==0)
+				{
+					strPrompt.Format(GetLocalString(_T("IDS_PASS")).c_str());
+					AddPrompt(strPrompt,FALSE,LIST_WARN);
+					m_listTestItem.SetItemText(i,2,strPrompt);
+				}
 				else
 				{
 					strPrompt.Format(GetLocalString(_T("IDS_ROTARY")).c_str());
@@ -1119,6 +1147,13 @@ void CIPSearchDlg::initTestCase()
 		TestCase.nTestStatus = 0;
 		m_TestCaseList.push_back(TestCase);
 	}
+	if (m_Configs.bMicTest)
+	{
+		TestCase.TestName = m_Configs.strMicTest;
+		TestCase.bAuto = true;
+		TestCase.nTestStatus = 0;
+		m_TestCaseList.push_back(TestCase);
+	}
 	if (m_Configs.bEmmcTest)
 	{
 		TestCase.TestName = m_Configs.strEmmcTest;
@@ -1185,6 +1220,13 @@ void CIPSearchDlg::initTestCase()
 	if (m_Configs.bRotaryTest)
 	{
 		TestCase.TestName = m_Configs.strRotaryTest;
+		TestCase.bAuto = false;
+		TestCase.nTestStatus = 0;
+		m_TestCaseList.push_back(TestCase);
+	}
+	if (m_Configs.bTouchTest)
+	{
+		TestCase.TestName = m_Configs.strTouchTest;
 		TestCase.bAuto = false;
 		TestCase.nTestStatus = 0;
 		m_TestCaseList.push_back(TestCase);
@@ -1490,6 +1532,7 @@ void CIPSearchDlg::ExitTest()
 {
 	int i,ret;
 	CString strPrompt;
+	std::string strMsg = "1";
 	for (i=0;i<m_TestCaseList.size();i++)
 	{
 
@@ -1504,8 +1547,10 @@ void CIPSearchDlg::ExitTest()
 				m_TestCaseList[i].nTestStatus = -1;
 			}
 		}
+		if (m_TestCaseList[i].nTestStatus==-1)
+			strMsg = "0";
 	}
-	ret = m_DevTest.ExitTest(m_TestSocket);
+	ret = m_DevTest.ExitTest(m_TestSocket,strMsg);
 	//if (ret<0)
 	//{
 	//	strPrompt.Format(GetLocalString(_T("IDS_INFO_EXIT_TEST_FAIL")).c_str(),ret);
@@ -1615,6 +1660,18 @@ int CIPSearchDlg::DoTestItem(std::wstring strTestName,std::string &strInfo)
 	{
 		ret = m_DevTest.RtcTest(m_TestSocket,wstr2str(strTestName));
 	}
+	else if (strTestName.compare(m_Configs.strTouchTest)==0)
+	{
+		//ret = m_DevTest.TouchTest(m_TestSocket,wstr2str(strTestName));
+		GetDlgItem(IDC_BUTTON_PASS)->EnableWindow(FALSE);
+		GetDlgItem(IDC_BUTTON_FAIL)->EnableWindow(TRUE);
+		ret=m_DevTest.KeyTest(m_TestSocket,wstr2str(strTestName),strInfo);
+		GetDlgItem(IDC_BUTTON_PASS)->EnableWindow(TRUE);
+	}
+	else if (strTestName.compare(m_Configs.strMicTest)==0)
+	{
+		ret = m_DevTest.MicTest(m_TestSocket,wstr2str(strTestName));
+	}
 	else if (strTestName.compare(m_Configs.strRotaryTest)==0)
 	{
 		GetDlgItem(IDC_BUTTON_PASS)->EnableWindow(FALSE);
@@ -1631,12 +1688,17 @@ void CIPSearchDlg::OnBnClickedButtonExit()
 	int ret,i;
 	bool bTest=false;
 	CString strPrompt;
+	std::string strMsg = "1";
 	
 	for (i=0;i<m_TestCaseList.size();i++)
 	{
 		if (m_TestCaseList[i].nTestStatus==1)
 		{
 			bTest = true;
+		}
+		if (m_TestCaseList[i].nTestStatus==-1)
+		{
+			strMsg = "0";
 		}
 	}
 	if (bTest)
@@ -1656,7 +1718,7 @@ void CIPSearchDlg::OnBnClickedButtonExit()
 		return ;
 	}
 	ret = m_DevTest.StopTestItem(m_TestSocket,wstr2str(m_Configs.strCameraName));
-	ret = m_DevTest.ExitTest(m_TestSocket);
+	ret = m_DevTest.ExitTest(m_TestSocket,strMsg);
 	if (ret<0)
 	{
 		strPrompt.Format(GetLocalString(_T("IDS_INFO_EXIT_TEST_FAIL")).c_str(),ret);
@@ -1749,6 +1811,12 @@ BOOL CIPSearchDlg::NextTestProc(int nTestResult)
 				if (m_TestCaseList[i].TestName.compare(m_Configs.strKeyName)==0)
 				{
 					strPrompt.Format(GetLocalString(_T("IDS_KEY_DOWN")).c_str());
+					AddPrompt(strPrompt,FALSE,LIST_WARN);
+					m_listTestItem.SetItemText(i,2,strPrompt);
+				}
+				else if (m_TestCaseList[i].TestName.compare(m_Configs.strTouchTest)==0)
+				{
+					strPrompt.Format(GetLocalString(_T("IDS_PASS")).c_str());
 					AddPrompt(strPrompt,FALSE,LIST_WARN);
 					m_listTestItem.SetItemText(i,2,strPrompt);
 				}

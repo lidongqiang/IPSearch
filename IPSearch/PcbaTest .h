@@ -77,7 +77,7 @@ public:
 	}
 	int UploadFile(std::string strFileName);
 	int EnterTestMode(SOCKET TestSocket);
-	int ExitTest(SOCKET TestSocket);
+	int ExitTest(SOCKET TestSocket,std::string Msg);
 	int StartTestItem(SOCKET TestSocket,std::string TestName,std::string Msg="");
 	int QueryTestItem(SOCKET TestSocket,std::string TestName,std::string &strOutput);
 	int CommitResult(SOCKET TestSocket,std::string TestName,std::string strResult);
@@ -88,6 +88,8 @@ public:
 	int KeyTest(SOCKET TestSocket,std::string TestName,std::string &strOutput);
 	int SdCardTest(SOCKET TestSocket,std::string TestName);
 	int WifiTest(SOCKET TestSocket,std::string TestName);
+	int TouchTest(SOCKET TestSocket,std::string TestName);
+	int MicTest(SOCKET TestSocket,std::string TestName);
 	int InterphoneTest(SOCKET TestSocket,std::string TestName);
 	int IrcutTest(SOCKET TestSocket,std::string TestName);
 	int LedTest(SOCKET TestSocket,std::string TestName);
