@@ -46,6 +46,14 @@
 #pragma comment(lib,"cmMfcLib_vs2008.lib")
 #endif
 
+
+#include "RKUpgradeDll.h"
+#ifdef _DEBUG
+#pragma comment(lib,"RKUpgrade_Debug.lib")
+#else
+#pragma comment(lib,"RKUpgrade.lib")
+#endif
+
 #pragma comment(lib, "iphlpapi.lib")
 
 

@@ -14,6 +14,7 @@
 #include "PcbaTest .h"
 //#include "AVPlayer.h"
 #include "ListCtrlEx/GridListCtrlColor.h"
+#include "scriptexe.h"
 
 typedef struct  
 {
@@ -89,6 +90,19 @@ public:
 	CFontStatic m_lbVideo;
 	CLogger     *m_pLog;
 	CGridListCtrlColor m_listTestItem;
+
+	CWinThread		*m_pScanThread;
+	CEvent			*m_pScanEvent;
+	CCriticalSection m_csScanLock;
+	BOOL			m_bUpgradeDllInitOK;
+	BOOL			m_bTerminated;
+	UINT			m_nDeviceCount;
+	BOOL			m_bExistMsc;
+	BOOL			m_bExistAdb;
+	BOOL			m_bExistLoader;
+	BOOL            m_bRedLedLight;
+	HBITMAP         m_hGreenLedBitmap;
+	HBITMAP         m_hRedLedBitmap;
 public:
 	void initUi();
 	void GetOtherIp();
@@ -99,6 +113,7 @@ public:
 	BOOL TestProc();
 	BOOL NextTestProc(int nTestResult);
 	int ScanDeviceProc(LPVOID lpParameter);
+	void ScanAdbDeviceProc();
 	BOOL RecvProc();
 	//void RecvThread();
 	int	 connect_dev();
@@ -112,6 +127,8 @@ public:
 	VOID WalkMenu(CMenu *pMenu,CString strMainKeyPart);
 	int DoTestItem(std::wstring strTestName,std::string &strInfo);
 	void UpdateTestitemList();
+	void GetDeviceList();
+	void UpdateDevInfo(std::string strInfo);
 public:
 	afx_msg void OnBnClickedBtnSerch();
 	afx_msg void OnBnClickedButtonTest();
@@ -126,6 +143,7 @@ public:
 	afx_msg void OnHelpAbout();
 	afx_msg void OnBnClickedButtonExit();
 	afx_msg LRESULT OnHandleUpdateTestinfoMsg(WPARAM wParam,LPARAM lParam);
+	afx_msg void OnBnClickedBtnCameraTest();
 };
 typedef struct{
 	CIPSearchDlg *pDlg;

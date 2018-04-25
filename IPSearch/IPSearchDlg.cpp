@@ -10,6 +10,7 @@
 #include "c_socket.h"
 #include "cmd_process.h"
 #include "./label/Label.h"
+#include "ameraTestDlg.h"
 #include "cmFile.h"
 #include "UidDlg.h"
 #include <iostream>
@@ -61,6 +62,14 @@ UINT ScanDeviceThread(LPVOID lpParam)
 	pMainDlg->ScanDeviceProc(pParam->ip);
 	return 0;
 }
+
+UINT ThreadScanAdbDevice(LPVOID lpParam)
+{
+	CIPSearchDlg* pMainDlg = (CIPSearchDlg*)lpParam;
+	pMainDlg->ScanAdbDeviceProc();
+	return 0;
+}
+
 UINT TestDeviceThread(LPVOID lpParam)
 {
 	CIPSearchDlg* pMainDlg = (CIPSearchDlg*)lpParam;
@@ -160,7 +169,7 @@ END_MESSAGE_MAP()
 
 
 CIPSearchDlg::CIPSearchDlg(CWnd* pParent /*=NULL*/)
-	: CDialog(CIPSearchDlg::IDD, pParent),m_listSelect(-1),m_bRun(false),m_bTestPass(false)
+: CDialog(CIPSearchDlg::IDD, pParent),m_listSelect(-1),m_bRun(false),m_bTestPass(false),m_pTestThread(NULL)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME4);
 }
@@ -190,6 +199,7 @@ BEGIN_MESSAGE_MAP(CIPSearchDlg, CDialog)
 	ON_COMMAND(ID_HELP_ABOUT, &CIPSearchDlg::OnHelpAbout)
 	ON_BN_CLICKED(IDC_BUTTON_EXIT, &CIPSearchDlg::OnBnClickedButtonExit)
 	ON_MESSAGE(WM_UPDATE_TESTINFO_MSG,&CIPSearchDlg::OnHandleUpdateTestinfoMsg)
+	ON_BN_CLICKED(IDC_BTN_CAMERA_TEST, &CIPSearchDlg::OnBnClickedBtnCameraTest)
 END_MESSAGE_MAP()
 
 
@@ -229,6 +239,12 @@ BOOL CIPSearchDlg::OnInitDialog()
 	m_pRecvThread = NULL;
 	//SetWindowPos(&wndTopMost, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE);
 
+	m_bUpgradeDllInitOK = FALSE;
+	m_bTerminated = FALSE;
+
+	m_pScanEvent = NULL;
+	m_pScanThread = NULL;
+
 	initUi();
 
 	//加载config.ini
@@ -250,6 +266,34 @@ BOOL CIPSearchDlg::OnInitDialog()
 		CLogger::DEBUG_LEVEL level = m_Configs.nLogLevel == DLEVEL_DEBUG?CLogger::DEBUG_ALL:
 			(m_Configs.nLogLevel  == DLEVEL_INFO ?CLogger::DEBUG_INFO:CLogger::DEBUG_ERROR);
 	m_pLog = CLogger::StartLog((m_Configs.strLogPath + TEXT("PCBATool-") + CLogger::TimeStr(true, true)).c_str(), level);    
+	}
+
+	INIT_DEV_INFO InitDevInfo;
+	INIT_LOG_INFO InitLogInfo;
+	INIT_CALLBACK_INFO InitCallbackInfo;
+
+	InitDevInfo.bScan4FsUsb = FALSE;
+	InitDevInfo.emSupportDevice = 0;
+	InitDevInfo.uiRockMscTimeout = 30;
+	InitDevInfo.uiRockusbTimeout = 30;
+	InitDevInfo.usRockMscPid = 0;
+	InitDevInfo.usRockMscVid = 0;
+	InitDevInfo.usRockusbPid = 0;
+	InitDevInfo.usRockusbVid = 0;
+
+	InitLogInfo.bLogEnable = TRUE;
+	InitLogInfo.lpszLogPathName = (LPTSTR)(LPCTSTR)m_Configs.strLogPath.c_str();
+
+	InitCallbackInfo.pProgressPromptProc = NULL;//you can set it to ProgressPromptProc for showing upgrade info;
+	InitCallbackInfo.pUpgradeStepPromptProc = NULL;//you can set it to UpgradeStepPromptProc for showing progress info;
+	m_bUpgradeDllInitOK = RK_Initialize(InitDevInfo, InitLogInfo, InitCallbackInfo);
+	if (!m_bUpgradeDllInitOK)
+	{
+		MessageBox(_T("Initialize RKUpgrade dll failed!"),_T("ERROR"),MB_ICONERROR|MB_OK);
+	}
+	else
+	{
+		m_pScanThread = AfxBeginThread(ThreadScanAdbDevice,(LPVOID)this);
 	}
 
 	LDEGMSGW((CLogger::DEBUG_INFO, _T("PCBATool(echo) start run")));
@@ -295,9 +339,9 @@ void CIPSearchDlg::initUi()
 	// 获取编程语言列表视图控件的位置和大小   
 	m_listDevice.GetClientRect(&rect); 
 	m_listDevice.SetExtendedStyle(m_listDevice.GetExtendedStyle() | LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES);  
-	m_listDevice.InsertColumn(0,_T("UID"),LVCFMT_CENTER, rect.Width()/4, 0);
-	m_listDevice.InsertColumn(1,_T("IP"),LVCFMT_CENTER, rect.Width()/2, 1);
-	m_listDevice.InsertColumn(2,_T("设备名称"),LVCFMT_CENTER, rect.Width()/4, 2);
+	m_listDevice.InsertColumn(0,_T("SN"),LVCFMT_CENTER, rect.Width()/2, 0);
+	//m_listDevice.InsertColumn(1,_T("IP"),LVCFMT_CENTER, rect.Width()/2, 1);
+	m_listDevice.InsertColumn(1,_T("设备名称"),LVCFMT_CENTER, rect.Width()/2, 1);
 	m_listDevice.DeleteAllItems();
 
 	CFont font;
@@ -309,7 +353,13 @@ void CIPSearchDlg::initUi()
 	m_listInfo.SetWindowBKColor(RGB(0,0,0));
 	//m_lbVideo.SetBackground(RGB(0,0,0));
 
+	m_bRedLedLight      = TRUE;
+	m_hGreenLedBitmap   = m_hRedLedBitmap = NULL;
+	m_hRedLedBitmap     = LoadBitmap(AfxGetInstanceHandle(),MAKEINTRESOURCE(IDB_BMP_REDLED));
+	m_hGreenLedBitmap   = LoadBitmap(AfxGetInstanceHandle(),MAKEINTRESOURCE(IDB_BMP_GREENLED));
+
 	GetDlgItem(IDC_BUTTON_EXIT)->ShowWindow(FALSE);
+	GetDlgItem(ID_BTN_SERCH)->ShowWindow(FALSE);
 	GetDlgItem(IDC_BUTTON_PASS)->EnableWindow(FALSE);
 	GetDlgItem(IDC_BUTTON_FAIL)->EnableWindow(FALSE);
 }
@@ -447,6 +497,34 @@ void CIPSearchDlg::OnPaint()
 	}
 	else
 	{
+		CPaintDC dc(this); // device context for painting
+		HBITMAP hLedBitmap;
+		if (m_bRedLedLight)
+		{
+			hLedBitmap = m_hRedLedBitmap;
+		}
+		else
+			hLedBitmap = m_hGreenLedBitmap;
+		// TODO: Add your message handler code here
+		if (hLedBitmap)
+		{
+			CPaintDC dc(GetDlgItem(IDC_PICTURE_DEVICE));
+			CDC ImageDC;
+			ImageDC.CreateCompatibleDC(&dc);
+			HGDIOBJ hOldGdiObject;
+			hOldGdiObject = ImageDC.SelectObject(hLedBitmap);
+			int nDstWidth,nDstHeight;
+			RECT dstClientRect;
+			dc.GetWindow()->GetClientRect(&dstClientRect);
+			nDstHeight = dstClientRect.bottom - dstClientRect.top;
+			nDstWidth = dstClientRect.right-dstClientRect.left;
+			BITMAP bmpStruct;
+			BOOL bRet;
+			GetObject(hLedBitmap,sizeof(BITMAP),&bmpStruct);
+
+			bRet = TransparentBlt(dc.m_hDC, 0, 0, nDstWidth, nDstHeight, ImageDC.m_hDC, 0, 0, bmpStruct.bmWidth, bmpStruct.bmHeight, RGB(255,255,255));
+			ImageDC.SelectObject(hOldGdiObject);
+		}
 		CDialog::OnPaint();
 	}
 }
@@ -660,8 +738,16 @@ bool CIPSearchDlg::OnStartTest()
 {
 	CString     strPromt;
 
-	if (m_listSelect != -1)
+	m_csScanLock.Lock();
+	if (m_nDeviceCount < 1)
 	{
+		strPromt.Format(GetLocalString(_T("IDS_ERROR_NO_DEVICE")).c_str());
+		m_csScanLock.Unlock();
+		goto OnStartTestExit;
+	}
+	m_csScanLock.Unlock();
+	//if (m_listSelect != -1)
+	//{
 		initTestCase();
 		if (m_TestCaseList.size()==0&&!m_Configs.bWriteMac&&!m_Configs.bWriteUid)
 		{
@@ -672,12 +758,12 @@ bool CIPSearchDlg::OnStartTest()
 		if(NULL == m_pTestThread) {
 			goto OnStartTestExit; /*generrally never to here **/
 		}
-	}
-	else
-	{
-		strPromt.Format(GetLocalString(_T("IDS_ERROR_NO_DEVICE")).c_str());
-		goto OnStartTestExit; /*generrally never to here **/
-	}
+	//}
+	//else
+	//{
+	//	strPromt.Format(GetLocalString(_T("IDS_ERROR_NO_DEVICE")).c_str());
+	//	goto OnStartTestExit; /*generrally never to here **/
+	//}
 	return TRUE;
 OnStartTestExit:
 	if(!strPromt.IsEmpty()) {
@@ -905,7 +991,7 @@ BOOL CIPSearchDlg::TestProc()
 	{
 		strPrompt.Format(GetLocalString(_T("IDS_ERROR_CONN_FAIL")).c_str(),ret);
 		AddPrompt(strPrompt,TRUE);
-		return FALSE;
+		goto TestExit;
 	}
 	strPrompt.Format(GetLocalString(_T("IDS_INFO_CONN_PASS")).c_str());
 	AddPrompt(strPrompt);
@@ -916,17 +1002,19 @@ BOOL CIPSearchDlg::TestProc()
 	}
 	strPrompt.Format(GetLocalString(_T("IDS_INFO_ENTER_TEST")).c_str());
 	AddPrompt(strPrompt);
-	ret = m_DevTest.EnterTestMode(m_TestSocket);
+	ret = m_DevTest.EnterTestMode(m_TestSocket,strMsg);
 	if (ret < 0)
 	{
 		strPrompt.Format(GetLocalString(_T("IDS_INFO_ENTER_TEST_FAIL")).c_str(),ret);
 		AddPrompt(strPrompt,TRUE);
-		return FALSE;
+		goto TestExit;
 	}
 	else
 	{
 		strPrompt.Format(GetLocalString(_T("IDS_INFO_ENTER_TEST_PASS")).c_str());
-		AddPrompt(strPrompt);
+		AddPrompt(strPrompt,FALSE);
+		//界面显示
+		UpdateDevInfo(strMsg);
 	}
 
 	//打开rtsp流
@@ -1012,6 +1100,11 @@ BOOL CIPSearchDlg::TestProc()
 				{
 					strPrompt.Format(GetLocalString(_T("FAILED")).c_str(),GetLocalString(m_TestCaseList[i].TestName).c_str(),ret);
 					AddPrompt(strPrompt,TRUE);
+					if (m_TestCaseList[i].TestName.compare(m_Configs.strMicTest)==0&&strOutput!="")
+					{
+						strPrompt.Format(_T("%s:%s"),GetLocalString(m_TestCaseList[i].TestName).c_str(),str2wstr(strOutput).c_str());
+						AddPrompt(strPrompt,TRUE);
+					}
 					m_TestCaseList[i].nTestStatus = -1;
 					PostMessage(WM_UPDATE_TESTINFO_MSG,0,0);
 				}
@@ -1049,6 +1142,9 @@ std::wstring CIPSearchDlg::GetLocalString(std::wstring strKey)
 
 int CIPSearchDlg::connect_dev()
 {
+	CSpawn		ShellSpawn;
+	wchar_t     strCmd[2600] = {0};
+	CString		strPort = _T("6666");
 	WORD wVersionRequested = MAKEWORD(2, 2);  
 	WSADATA wsaData;  
 	if(0 != WSAStartup(wVersionRequested, &wsaData))  
@@ -1062,10 +1158,26 @@ int CIPSearchDlg::connect_dev()
 		WSACleanup();  
 		return -1;  
 	}
-	m_TestSocket = socket(AF_INET,SOCK_STREAM,0);//创建套接字（socket）
+	m_TestSocket = socket(AF_INET,SOCK_STREAM,IPPROTO_TCP);//创建套接字（socket）
 	if (INVALID_SOCKET==m_TestSocket)
 	{
 		return -2;
+	}
+
+	//adb socket
+	swprintf(strCmd,nof(strCmd),TEXT("adb.exe forward tcp:8888 tcp:%s"),strPort);
+	if(ShellSpawn.Exe(strCmd,25000, true)) 
+	{
+		if(0 != ShellSpawn.GetResult()) 
+		{
+			AfxMessageBox(_T("adb forward fail!"));
+			return -3;
+		}
+	}
+	else
+	{
+		AfxMessageBox(_T("adb forward fail!"));
+		return -4;
 	}
 
 	//int nNetTimeout=3000;//5秒
@@ -1073,13 +1185,14 @@ int CIPSearchDlg::connect_dev()
 	//setsockopt(m_TestSocket,SOL_SOCKET,SO_SNDTIMEO,(char *)&nNetTimeout,sizeof(int));
 	//设置接收超时
 	//setsockopt(m_TestSocket,SOL_SOCKET,SO_RCVTIMEO,(char *)&nNetTimeout,sizeof(int));
+	m_strIp = _T("127.0.0.1");
 	Timeout(m_TestSocket,3000);
 
 	SOCKADDR_IN addrSrv; 
 	addrSrv.sin_addr.S_un.S_addr=inet_addr(wstr2str((LPCTSTR)m_strIp).c_str()); 
 	//addrSrv.sin_addr.S_un.S_addr=inet_addr("172.16.14.156");
 	addrSrv.sin_family=AF_INET; 
-	addrSrv.sin_port=htons((u_short)6666 ); 
+	addrSrv.sin_port=htons((u_short)8888 ); 
 	//connect(m_TestSocket,(SOCKADDR*)&addrSrv,sizeof(SOCKADDR));//向设备发出连接请求（connect) 
 	if (connect(m_TestSocket,(SOCKADDR*)&addrSrv,sizeof(SOCKADDR)) == SOCKET_ERROR)
 	{
@@ -1463,6 +1576,52 @@ void CIPSearchDlg::OnClose()
 		delete m_pLog;
 		m_pLog = NULL;
 	}
+	m_bTerminated = TRUE;
+	if (m_pScanThread)
+	{
+		MSG msg;
+		DWORD dwRet;
+		while (TRUE)
+		{
+			dwRet = MsgWaitForMultipleObjects(1, &m_pScanEvent->m_hObject,FALSE, 10000, QS_ALLINPUT);
+			if(WAIT_OBJECT_0 ==dwRet )
+			{
+				break;
+			}
+			else if( (WAIT_OBJECT_0+1)==dwRet )
+			{
+				while (PeekMessage(&msg, NULL, NULL, NULL, PM_REMOVE))
+				{
+					TranslateMessage(&msg);
+					DispatchMessage(&msg);
+				}
+
+			}
+			else if (WAIT_TIMEOUT==dwRet)
+			{
+				TerminateThread(m_pScanThread->m_hThread,0);
+				break;
+			}
+		}//end while
+		m_pScanThread = NULL;
+		delete m_pScanEvent;
+		m_pScanEvent = NULL;
+	}
+	if (m_bUpgradeDllInitOK)
+	{
+		RK_Uninitialize();
+	}
+	if (m_hRedLedBitmap) {
+		DeleteObject(m_hRedLedBitmap);
+		m_hRedLedBitmap = NULL;
+	}
+
+	if (m_hGreenLedBitmap) {
+		DeleteObject(m_hGreenLedBitmap);
+		m_hGreenLedBitmap = NULL;
+	}
+
+	m_Configs.SaveToolSetting(std::wstring(_T("")));
 	CDialog::OnOK();
 }
 
@@ -1670,7 +1829,7 @@ int CIPSearchDlg::DoTestItem(std::wstring strTestName,std::string &strInfo)
 	}
 	else if (strTestName.compare(m_Configs.strMicTest)==0)
 	{
-		ret = m_DevTest.MicTest(m_TestSocket,wstr2str(strTestName));
+		ret = m_DevTest.MicTest(m_TestSocket,wstr2str(strTestName),strInfo);
 	}
 	else if (strTestName.compare(m_Configs.strRotaryTest)==0)
 	{
@@ -1860,4 +2019,108 @@ BOOL CIPSearchDlg::NextTestProc(int nTestResult)
 		GetDlgItem(IDC_BUTTON_NEXT)->EnableWindow(TRUE);
 	}
 	return TRUE;
+}
+
+void CIPSearchDlg::ScanAdbDeviceProc()
+{
+	UINT nDeviceCount = 0;
+	bool bSendMsg = FALSE;
+	m_pScanEvent = new CEvent(FALSE,TRUE);
+	m_pScanEvent->ResetEvent();
+	m_nDeviceCount = 0;
+	m_bExistMsc = FALSE;
+	m_bExistAdb = FALSE;
+	while (!m_bTerminated)
+	{
+		nDeviceCount = 0;
+		bSendMsg = FALSE;
+		m_csScanLock.Lock();
+		RK_ScanDevice(nDeviceCount,m_bExistMsc,m_bExistAdb);
+		if (m_nDeviceCount != nDeviceCount)
+		{
+			m_nDeviceCount = nDeviceCount;
+			bSendMsg = TRUE;
+
+		}
+		m_csScanLock.Unlock();
+		if (m_nDeviceCount==0)
+		{
+			m_bRedLedLight = TRUE;
+		}
+		else if (m_nDeviceCount>=1)
+		{
+			if (m_bExistAdb||m_bExistMsc)
+			{
+				m_bRedLedLight = FALSE;
+			}
+		}
+		if (bSendMsg)
+		{
+			GetDeviceList();
+			PostMessage(WM_UPDATE_MSG,UPDATE_PROMPT,PROMPT_EMPTY);
+			PostMessage(WM_UPDATE_MSG,UPDATE_WINDOW,0);
+		}
+		Sleep(200);
+	}
+	m_pScanEvent->SetEvent();
+}
+
+void CIPSearchDlg::GetDeviceList()
+{
+	CSpawn	ShellSpawn;
+	wchar_t strCmd[2600] = {0};
+	CString strResult;
+	CString strDevInfo,strDevSn,strDevName;
+	int nIndex = 0;
+	int nIndex1;
+	int i = 0;
+	swprintf(strCmd,nof(strCmd),TEXT("adb.exe devices"));
+	if(ShellSpawn.Exe(strCmd,25000, true)) 
+	{
+		if(0 != ShellSpawn.GetResult()) 
+		{
+			AfxMessageBox(_T("adb devices fail!"));
+			return ;
+		}
+		strResult = ShellSpawn.GetResultStr();
+		//AfxMessageBox(strResult);
+	}
+	else
+	{
+		AfxMessageBox(_T("adb devices fail!"));
+		return ;
+	}
+
+	//解析adb devices 的信息
+	//nIndex = strResult.Find(_T("\n"));
+	//while (nIndex !=-1)
+	//{
+	//	strDevInfo = strResult.Left(nIndex);
+	//	nIndex1 = strDevInfo.Find(_T(" "));
+	//	strDevSn = strDevInfo.Left(nIndex1);
+	//	更新显示
+	//	m_listDevice.InsertItem(i,_T(""));
+	//	m_listDevice.SetItemText(i,0,strDevSn);
+	//	m_listDevice.SetItemText(i,1,m_DevList[nIndex].strIP.c_str());
+
+	//	nIndex = strResult.Find(_T("\n"));	
+	//}
+}
+
+void CIPSearchDlg::UpdateDevInfo(std::string strInfo)
+{
+	int i1,i2,i3;
+	std::string strDevName,strMac;
+	i1 = strInfo.find(';');
+	strDevName = strInfo.substr(0,i1);
+	strMac = strInfo.substr(i1+1,strInfo.length());
+	SetDlgItemText(IDC_EDIT_DEVNAME,str2wstr(strDevName).c_str());
+	SetDlgItemText(IDC_EDIT_PORT,str2wstr(strMac).c_str());
+}
+void CIPSearchDlg::OnBnClickedBtnCameraTest()
+{
+	// TODO: Add your control notification handler code here
+	CameraTestDlg CameraDlg;
+	CameraDlg.DoModal();
+
 }

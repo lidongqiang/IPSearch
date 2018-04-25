@@ -36,7 +36,7 @@ CPcbaTest::CPcbaTest():m_pLogger(NULL)
 {
 
 }
-int CPcbaTest::EnterTestMode(SOCKET TestSocket)
+int CPcbaTest::EnterTestMode(SOCKET TestSocket,std::string &strOutput)
 {
 	std::string strMsg,strSta,strRes,strErrCode;
 	int ret,nErrCode;
@@ -64,6 +64,7 @@ int CPcbaTest::EnterTestMode(SOCKET TestSocket)
 	m_Json.JsontoItem("RES",strRes,strMsg);
 	m_Json.JsontoItem("STATUS",strSta,strMsg);
 	m_Json.JsontoItem("ERR_CODE",strErrCode,strMsg);
+	m_Json.JsontoItem("MSG",strOutput,strMsg);
 	if (stringCompareIgnoreCase(strRes,"ENTER"))
 	{
 		return -103;
@@ -191,6 +192,7 @@ int CPcbaTest::QueryTestItem(SOCKET TestSocket,std::string TestName,std::string 
 	LOGER((CLogger::DEBUG_DUT,"recv_msg:%s",strMsg.c_str()));
 	m_Json.JsontoItem("RES",strRes,"STATUS",strSta,"TEST_ITEM",strTestItem,"RESULT",strResult,strMsg);
 	m_Json.JsontoItem("ERR_CODE",strErrCode,strMsg);
+	m_Json.JsontoItem("MSG",strOutput,strMsg);
 	if (stringCompareIgnoreCase(strRes,"QUERY")||stringCompareIgnoreCase(strTestItem,TestName))
 	{
 		return -103;
@@ -205,7 +207,6 @@ int CPcbaTest::QueryTestItem(SOCKET TestSocket,std::string TestName,std::string 
 	}
 	if (!stringCompareIgnoreCase(strResult,"verify"))
 	{
-		m_Json.JsontoItem("MSG",strOutput,strMsg);
 		return 2;
 	}
 	return 0;
@@ -507,13 +508,53 @@ int CPcbaTest::TouchTest(SOCKET TestSocket,std::string TestName)
 {
 	return StartTestItem(TestSocket,TestName);
 }
-int CPcbaTest::MicTest(SOCKET TestSocket,std::string TestName)
+int CPcbaTest::MicTest(SOCKET TestSocket,std::string TestName,std::string &strOutput)
 {
-	return StartTestItem(TestSocket,TestName);
+	return StartTestItem(TestSocket,TestName,strOutput);
 }
 int CPcbaTest::CameraTest(SOCKET TestSocket,std::string TestName)
 {
-	return StartTestItem(TestSocket,TestName);
+	std::string strMsg,strSta,strRes,strTestItem,strResult,strErrCode;
+	int ret,nErrCode;
+	int n=5;
+
+	LOGER((CLogger::DEBUG_DUT,"CameraTest()"));
+
+	ret = UploadFile(TestName);
+	if (ret < 0)
+	{
+		return -101;
+	}
+
+	//1.发送命令给设备端开始测试 {"TYPE":"CMD", "TEST ITEM":"WRITE_TEST", "CMD":"START" }
+	m_Json.ItemtoJson("TYPE","CMD","TEST_ITEM",TestName,"CMD","CAPTURE_IMAGE",strMsg);
+	LOGER((CLogger::DEBUG_DUT,"send_msg:%s",strMsg.c_str()));
+	ret = socket_write(TestSocket,strMsg);
+	if (ret < 0)
+	{
+		LOGER((CLogger::DEBUG_DUT,"%s:socket:send data failed\r\n",TestName));
+		return -102;
+	}
+
+	//2.读取设备端返回的结果，确定成功与否，成功返回{"TYPE":"RES", "TEST ITEM":"KEY-TEST", "RES":"START", "STATUS":"ACK"}
+	ret = socket_read(TestSocket,strMsg);
+	if (ret <= 0)
+	{
+		LOGER((CLogger::DEBUG_DUT,"%s:recv data failed\r\n",strMsg));
+		return -103;
+	}
+	LOGER((CLogger::DEBUG_DUT,"recv_msg:%s\n",strMsg.c_str()));
+	m_Json.JsontoItem("RES",strRes,"STATUS",strSta,"TEST_ITEM",strTestItem,strMsg);
+	m_Json.JsontoItem("ERR_CODE",strErrCode,strMsg);
+	if (stringCompareIgnoreCase(strRes,"CAPTURE_IMAGE")||stringCompareIgnoreCase(strTestItem,TestName))
+	{
+		return -4;
+	}
+	if (!stringCompareIgnoreCase(strSta,"NAK"))
+	{
+		return atoi(strErrCode.c_str());
+	}
+	return 0;
 }
 int CPcbaTest::StopCamera(SOCKET TestSocket,std::string TestName)
 {

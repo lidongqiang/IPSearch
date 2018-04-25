@@ -26,6 +26,9 @@
 #define IDB_BITMAP2                     150
 #define IDB_BITMAP3                     151
 #define IDR_MAINFRAME3                  153
+#define IDB_BMP_GREENLED                154
+#define IDB_BMP_REDLED                  155
+#define IDD_DIALOG_CAMERA_TEST          156
 #define ID_BTN_SERCH                    1001
 #define IDC_LIST_DEVICE                 1002
 #define IDC_EDIT_IP                     1003
@@ -56,7 +59,6 @@
 #define IDC_CHECK_HDMI                  1018
 #define IDC_CHECK10                     1019
 #define IDC_CHECK_LANMAC                1019
-#define IDC_                            1019
 #define IDC_CHECK_TOUCH                 1019
 #define IDC_CHECK11                     1020
 #define IDC_CHECK_UID                   1020
@@ -100,6 +102,10 @@
 #define IDC_EDIT12                      1056
 #define IDC_EDIT13                      1057
 #define IDC_LIST_TESTITEM               1058
+#define IDC_PICTURE_DEVICE              1059
+#define IDC_BTN_CAMERA_TEST             1060
+#define ID_BTN_TEST                     1061
+#define IDC_STATIC_PICTURE              1062
 #define ID_ABOUT_VERSION                32771
 #define ID_ABOUT_LANGUAGE               32772
 #define ID_HELP_ABOUT                   32773
@@ -109,9 +115,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        154
+#define _APS_NEXT_RESOURCE_VALUE        157
 #define _APS_NEXT_COMMAND_VALUE         32775
-#define _APS_NEXT_CONTROL_VALUE         1059
+#define _APS_NEXT_CONTROL_VALUE         1063
 #define _APS_NEXT_SYMED_VALUE           108
 #endif
 #endif

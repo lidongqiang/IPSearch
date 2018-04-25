@@ -76,7 +76,7 @@ public:
 		return _stricmp(lhs.c_str(),rhs.c_str());
 	}
 	int UploadFile(std::string strFileName);
-	int EnterTestMode(SOCKET TestSocket);
+	int EnterTestMode(SOCKET TestSocket,std::string &strOutput);
 	int ExitTest(SOCKET TestSocket,std::string Msg);
 	int StartTestItem(SOCKET TestSocket,std::string TestName,std::string Msg="");
 	int QueryTestItem(SOCKET TestSocket,std::string TestName,std::string &strOutput);
@@ -89,7 +89,7 @@ public:
 	int SdCardTest(SOCKET TestSocket,std::string TestName);
 	int WifiTest(SOCKET TestSocket,std::string TestName);
 	int TouchTest(SOCKET TestSocket,std::string TestName);
-	int MicTest(SOCKET TestSocket,std::string TestName);
+	int MicTest(SOCKET TestSocket,std::string TestName,std::string &strOutput);
 	int InterphoneTest(SOCKET TestSocket,std::string TestName);
 	int IrcutTest(SOCKET TestSocket,std::string TestName);
 	int LedTest(SOCKET TestSocket,std::string TestName);

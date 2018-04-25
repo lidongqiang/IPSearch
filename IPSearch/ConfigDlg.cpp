@@ -77,9 +77,9 @@ BOOL CConfigDlg::OnInitDialog()
 	//((CButton*)GetDlgItem(IDC_CHECK_UID    ))->SetCheck(m_Configs.bWriteUid                ?BST_CHECKED:BST_UNCHECKED);
 	//((CButton*)GetDlgItem(IDC_CHECK_LANMAC    ))->SetCheck(m_Configs.bBtTest                ?BST_CHECKED:BST_UNCHECKED);
 	((CButton*)GetDlgItem(IDC_CHECK_BT    ))->SetCheck(m_Configs.bBtTest                ?BST_CHECKED:BST_UNCHECKED);
-	((CButton*)GetDlgItem(IDC_CHECK_EMMC    ))->SetCheck(m_Configs.bEmmcTest                ?BST_CHECKED:BST_UNCHECKED);
-	((CButton*)GetDlgItem(IDC_CHECK_DDR    ))->SetCheck(m_Configs.bDdrTest                ?BST_CHECKED:BST_UNCHECKED);
-	((CButton*)GetDlgItem(IDC_CHECK_TOUCH    ))->SetCheck(m_Configs.bTouchTest                ?BST_CHECKED:BST_UNCHECKED);
+	((CButton*)GetDlgItem(IDC_CHECK_EMMC    ))->SetCheck(m_Configs.bEmmcTest            ?BST_CHECKED:BST_UNCHECKED);
+	((CButton*)GetDlgItem(IDC_CHECK_DDR    ))->SetCheck(m_Configs.bDdrTest              ?BST_CHECKED:BST_UNCHECKED);
+	((CButton*)GetDlgItem(IDC_CHECK_TOUCH    ))->SetCheck(m_Configs.bTouchTest          ?BST_CHECKED:BST_UNCHECKED);
 	((CButton*)GetDlgItem(IDC_CHECK_MIC    ))->SetCheck(m_Configs.bMicTest                ?BST_CHECKED:BST_UNCHECKED);
 	((CButton*)GetDlgItem(IDC_CHECK_RTC    ))->SetCheck(m_Configs.bRtcTest                ?BST_CHECKED:BST_UNCHECKED);
 	((CButton*)GetDlgItem(IDC_CHECK_ROTARY    ))->SetCheck(m_Configs.bRotaryTest                ?BST_CHECKED:BST_UNCHECKED);

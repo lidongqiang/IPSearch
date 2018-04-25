@@ -45,7 +45,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\include"
+				AdditionalIncludeDirectories="..\include,upgradeLib"
 				PreprocessorDefinitions="WIN32;_WINDOWS;_DEBUG"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -71,7 +71,7 @@
 				AdditionalDependencies="Ws2_32.lib Mpr.lib json_debug.lib libvlc.lib libvlccore.lib"
 				OutputFile="$(OutDir)\IPCameraTool_debug.exe"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="..\lib"
+				AdditionalLibraryDirectories="..\lib,upgradeLib"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				TargetMachine="1"
@@ -129,7 +129,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="..\include"
+				AdditionalIncludeDirectories="..\include,upgradeLib"
 				PreprocessorDefinitions="WIN32;_WINDOWS;NDEBUG"
 				MinimalRebuild="false"
 				RuntimeLibrary="0"
@@ -155,7 +155,7 @@
 				AdditionalDependencies="Ws2_32.lib Mpr.lib json.lib"
 				OutputFile="$(OutDir)\PCBATool.exe"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="..\lib"
+				AdditionalLibraryDirectories="..\lib,upgradeLib"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="1"
@@ -193,6 +193,10 @@
 			Filter="cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx"
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
+			<File
+				RelativePath=".\ameraTestDlg.cpp"
+				>
+			</File>
 			<File
 				RelativePath=".\BitConfigDlg.cpp"
 				>
@@ -268,6 +272,10 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
+				RelativePath=".\ameraTestDlg.h"
+				>
+			</File>
+			<File
 				RelativePath=".\BitConfigDlg.h"
 				>
 			</File>
@@ -305,6 +313,10 @@
 			</File>
 			<File
 				RelativePath=".\Resource.h"
+				>
+			</File>
+			<File
+				RelativePath=".\upgradeLib\RKUpgradeDll.h"
 				>
 			</File>
 			<File
@@ -346,6 +358,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\res\green_led.bmp"
+				>
+			</File>
+			<File
 				RelativePath=".\res\icon2.ico"
 				>
 			</File>
@@ -379,6 +395,10 @@
 			</File>
 			<File
 				RelativePath=".\res\logo.bmp"
+				>
+			</File>
+			<File
+				RelativePath=".\res\red_led.bmp"
 				>
 			</File>
 			<File
